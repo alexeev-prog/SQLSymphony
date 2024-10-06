@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "sqlsymphony-orm"
+version = "0.1.1"
+description = ""
+authors = ["alexeev-prog <dev.alexeev@mail.ru>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+rich = "^13.9.2"
+ruff = "^0.6.9"
+pycolor-palette-loguru = "^0.1.4"
+loguru = "^0.7.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
