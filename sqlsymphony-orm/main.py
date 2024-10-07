@@ -1,32 +1,35 @@
 from sqlsymphony_orm.datatypes.base import IntegerField, CharField
-from sqlsymphony_orm.models.base import Model
+from sqlsymphony_orm.models.base import Model, ModelManager
+from sqlsymphony_orm.connections.database import SQLiteDatabaseConnection, DatabaseConnection
 
-# integer = IntegerField()
-# integer.view_table_info()
-
-# real = RealField()
-# real.view_table_info()
-
-# char = CharField()
-# char.view_table_info()
-
-# text = TextField()
-# text.view_table_info()
-
-# blob = BlobField()
-# blob.view_table_info()
+db = SQLiteDatabaseConnection('my.db')
+db.connect()
+model_manager = ModelManager(db)
 
 
+@model_manager.register_model
 class User(Model):
-	id = IntegerField(primary_key=True, auto_increment=True)
+	__tablename__ = 'Users'
+
+	id = IntegerField(primary_key=True, auto_increment=True, default=0)
 	name = CharField(max_length=64, unique=True)
+	
 
-	def __str__(self):
-		return f'<User Model {self.id}>'
+@model_manager.register_model
+class Post(Model):
+	__tablename__ = 'Posts'
+
+	id = IntegerField(primary_key=True, auto_increment=True, default=0)
+	title = CharField(max_length=128)
 
 
-user = User(name='John Doe')
-user.view_table_info()
+user = User(database_connection=db, model_manager=model_manager, name='John Doe')
+user.save()
 
-user = User(name='Jane Doe')
-user.view_table_info()
+user2 = User(database_connection=db, model_manager=model_manager, name='Jane Doe')
+user2.save()
+
+user2.update_field('name', 'jane')
+
+post1 = Post(database_connection=db, model_manager=model_manager, title='Howto')
+post1.save()

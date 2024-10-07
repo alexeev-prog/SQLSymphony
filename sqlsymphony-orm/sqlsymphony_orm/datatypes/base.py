@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
-
 from rich.console import Console
 from rich.table import Table
 
@@ -86,6 +85,10 @@ class BaseDataType(ABC):
 
 		console = Console()
 		console.print(table)
+
+	@abstractmethod
+	def to_sql_type(self) -> str:
+		raise NotImplementedError
 
 	def __str__(self):
 		return '<BaseDataType>'
@@ -184,6 +187,9 @@ class IntegerField(BaseDataType):
 		console = Console()
 		console.print(table)
 
+	def to_sql_type(self) -> str:
+		return 'INTEGER'
+
 	def __str__(self):
 		return '<IntegerField>'
 
@@ -278,6 +284,9 @@ class RealField(BaseDataType):
 		console = Console()
 		console.print(table)
 
+	def to_sql_type(self) -> str:
+		return 'REAL'
+
 	def __str__(self):
 		return '<RealField>'
 
@@ -306,6 +315,9 @@ class CharField(BaseDataType):
 		self.default: Any = default
 
 		self.max_length = max_length
+
+	def to_sql_type(self) -> str:
+		return f'VARCHAR({self.max_length})'
 
 	def validate(self, value: Any) -> bool:
 		"""
@@ -393,6 +405,9 @@ class TextField(BaseDataType):
 		self.null: bool = null
 		self.default: Any = default
 
+	def to_sql_type(self) -> str:
+		return 'TEXT'
+
 	def validate(self, value: Any) -> bool:
 		"""
 		Validate value
@@ -477,6 +492,9 @@ class BlobField(BaseDataType):
 		self.default: Any = default
 
 		self.max_size_in_bytes = max_size_in_bytes
+
+	def to_sql_type(self) -> str:
+		return 'BLOB'
 
 	def validate(self, value: Any) -> bool:
 		"""
@@ -571,12 +589,12 @@ class FieldMeta(type):
 					primary_key = key
 
 					if value.auto_increment:
-						value.default = 0
+						value.default = 1
 
 		attrs['_fields'] = fields
 		attrs['_primary_key'] = primary_key
 
-		return super(FieldMeta, cls).__new__(cls, name, bases, attrs)
+		return super().__new__(cls, name, bases, attrs)
 
 	def __str__(self):
 		return '<FieldMeta>'

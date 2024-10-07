@@ -1,0 +1,359 @@
+import sqlite3
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Tuple, Any, Dict, List, Type
+from datetime import datetime
+
+class DatabaseConnection(ABC):
+    @abstractmethod
+    def connect(self) -> None:
+        pass
+
+    @abstractmethod
+    def execute(self, query: str, params: Tuple = ()) -> Tuple:
+        pass
+
+    @abstractmethod
+    def commit(self) -> None:
+        pass
+
+    @abstractmethod
+    def close(self) -> None:
+        pass
+
+@dataclass
+class SQLiteDatabaseConnection(DatabaseConnection):
+    database_file: str = 'database.db'
+
+    def connect(self) -> None:
+        self._connection = sqlite3.connect(self.database_file)
+
+    def execute(self, query: str, params: Tuple = ()) -> Tuple:
+        cursor = self._connection.cursor()
+        cursor.execute(query, params)
+        return cursor.fetchall()
+
+    def commit(self) -> None:
+        self._connection.commit()
+
+    def close(self) -> None:
+        self._connection.close()
+
+class DatabaseRepository(ABC):
+    def __init__(self, connection: DatabaseConnection):
+        self._connection = connection
+
+    @abstractmethod
+    def create(self, table_name: str, data: Dict[str, Any]) -> None:
+        pass
+
+    @abstractmethod
+    def read(self, table_name: str, filters: Dict[str, Any], order_by: str = None, limit: int = None, offset: int = None) -> Tuple[Dict[str, Any]]:
+        pass
+
+    @abstractmethod
+    def update(self, table_name: str, pk: Any, data: Dict[str, Any]) -> None:
+        pass
+
+    @abstractmethod
+    def delete(self, table_name: str, pk: Any) -> None:
+        pass
+
+    @abstractmethod
+    def count(self, table_name: str, filters: Dict[str, Any]) -> int:
+        pass
+
+@dataclass
+class SQLiteDatabaseRepository(DatabaseRepository):
+    def create(self, table_name: str, data: Dict[str, Any]) -> None:
+        columns = ', '.join(data.keys())
+        values = ', '.join(['?' for _ in data])
+        query = f"INSERT INTO {table_name} ({columns}) VALUES ({values})"
+        self._connection.execute(query, tuple(data.values()))
+        self._connection.commit()
+
+    def read(self, table_name: str, filters: Dict[str, Any], order_by: str = None, limit: int = None, offset: int = None) -> Tuple[Dict[str, Any]]:
+        filters_str = ' AND '.join([f"{field} = ?" for field in filters])
+        query = f"SELECT * FROM {table_name} WHERE {filters_str}"
+        if order_by:
+            query += f" ORDER BY {order_by}"
+        if limit:
+            query += f" LIMIT {limit}"
+        if offset:
+            query += f" OFFSET {offset}"
+        rows = self._connection.execute(query, tuple(filters.values()))
+        return tuple(dict(zip(filters.keys(), row)) for row in rows)
+
+    def update(self, table_name: str, pk: Any, data: Dict[str, Any]) -> None:
+        updates = ', '.join([f"{field} = ?" for field in data])
+        query = f"UPDATE {table_name} SET {updates} WHERE id = ?"
+        self._connection.execute(query, (*tuple(data.values()), pk))
+        self._connection.commit()
+
+    def delete(self, table_name: str, pk: Any) -> None:
+        query = f"DELETE FROM {table_name} WHERE id = ?"
+        self._connection.execute(query, (pk,))
+        self._connection.commit()
+
+    def count(self, table_name: str, filters: Dict[str, Any]) -> int:
+        filters_str = ' AND '.join([f"{field} = ?" for field in filters])
+        query = f"SELECT COUNT(*) FROM {table_name} WHERE {filters_str}"
+        return self._connection.execute(query, tuple(filters.values()))[0][0]
+
+class Query:
+
+    def __init__(self, database_repository: DatabaseRepository, table_name: str):
+        self._database_repository = database_repository
+        self._table_name = table_name
+        self._filters = {}
+        self._order_by = None
+        self._limit = None
+        self._offset = None
+
+    def filter(self, **kwargs) -> 'Query':
+        self._filters.update(kwargs)
+        return self
+
+    def order_by(self, field: str) -> 'Query':
+        self._order_by = field
+        return self
+
+    def limit(self, limit: int) -> 'Query':
+        self._limit = limit
+        return self
+
+    def offset(self, offset: int) -> 'Query':
+        self._offset = offset
+        return self
+
+    def get(self) -> Tuple[Dict[str, Any]]:
+        return self._database_repository.read(
+            table_name=self._table_name,
+            filters=self._filters,
+            order_by=self._order_by,
+            limit=self._limit,
+            offset=self._offset
+        )
+
+    def create(self, data: Dict[str, Any]) -> None:
+        self._database_repository.create(
+            table_name=self._table_name,
+            data=data
+        )
+
+    def update(self, pk: Any, data: Dict[str, Any]) -> None:
+        self._database_repository.update(
+            table_name=self._table_name,
+            pk=pk,
+            data=data
+        )
+
+    def delete(self, pk: Any) -> None:
+        self._database_repository.delete(
+            table_name=self._table_name,
+            pk=pk
+        )
+
+    def count(self) -> int:
+        return self._database_repository.count(
+            table_name=self._table_name,
+            filters=self._filters
+        )
+
+class FieldMeta(type):
+    def __new__(cls, name, bases, attrs):
+        fields = {}
+        primary_key = None
+        for key, value in attrs.items():
+            if isinstance(value, BaseDataType):
+                fields[key] = value
+                if value.primary_key:
+                    if primary_key:
+                        raise ValueError("Multiple primary keys are not allowed")
+                    primary_key = key
+                    if value.auto_increment:
+                        value.default = 0
+        attrs['_fields'] = fields
+        attrs['_primary_key'] = primary_key
+        return super(FieldMeta, cls).__new__(cls, name, bases, attrs)
+
+class ProxyObjectMeta(type):
+    def __init__(cls, name, bases, attrs):
+        super().__init__(name, bases, attrs)
+        cls._proxy_object = Object(cls)
+
+class Object:
+    def __init__(self, model_class: Type['Model']):
+        self._model_class = model_class
+        self._model_manager = ModelManager(model_class._database_connection)
+
+    def get(self, **kwargs) -> 'Model':
+        return self._model_manager.get(self._model_class, **kwargs)
+
+    def filter(self, **kwargs) -> Tuple['Model']:
+        return self._model_manager.filter(self._model_class, **kwargs)
+
+    def all(self) -> Tuple['Model']:
+        return self._model_manager.all(self._model_class)
+
+    def save(self, instance: 'Model') -> None:
+        self._model_manager.save(instance)
+
+    def delete(self, instance: 'Model') -> None:
+        self._model_manager.delete(instance)
+
+def sqlsymphony_table(table_name: str = None):
+    def decorator(cls):
+        cls.__name__ = table_name or cls.__name__
+        cls = ProxyObjectMeta(cls.__name__, (cls,), {})
+        return cls
+    return decorator
+
+@dataclass
+class Model(metaclass=FieldMeta):
+    _database_connection: DatabaseConnection
+    _model_manager: 'ModelManager'
+
+    def __new__(cls, *args, **kwargs):
+        instance = super().__new__(cls)
+        if cls not in cls._model_manager._models:
+            cls._model_manager.register_model(cls)
+
+        return instance
+
+    def __init__(self, database_connection: DatabaseConnection, **kwargs):
+        self._database_connection = database_connection
+        self._model_manager = ModelManager(database_connection)
+        for field_name, field in self._fields.items():
+            value = kwargs.get(field_name, None)
+            if field_name == self._primary_key and field.auto_increment and value is None:
+                value = self._get_next_pk_value()
+            if value is not None and field.validate(value):
+                setattr(self, field_name, field.to_db_value(value))
+            else:
+                setattr(self, field_name, field.default)
+
+    def _get_next_pk_value(self) -> Any:
+        table_name = self.__class__.__name__.lower()
+        max_pk = self._model_manager.filter(self.__class__, **{self._primary_key: None})
+        if not max_pk:
+            return 1
+        return max_pk[0].pk + 1
+
+    def save(self) -> None:
+        self._model_manager.save(self)
+
+    def delete(self) -> None:
+        self._model_manager.delete(self)
+
+    @property
+    def pk(self) -> Any:
+        return getattr(self, self._primary_key)
+
+    @classmethod
+    def get(cls, **kwargs) -> 'Model':
+        return cls.object.get(**kwargs)
+
+    @classmethod
+    def filter(cls, **kwargs) -> Tuple['Model']:
+        return cls.object.filter(**kwargs)
+
+    @classmethod
+    def all(cls) -> Tuple['Model']:
+        return cls.object.all()
+
+    @property
+    def object(self) -> 'Object':
+        return self.__class__._proxy_object
+
+class ModelManager:
+    def __init__(self, database_connection: DatabaseConnection):
+        self._database_repository = SQLiteDatabaseRepository(database_connection)
+        self._models = {}
+
+    def register_model(self, model_class: Type['Model']) -> None:
+        table_name = model_class.__name__.lower()
+        self._models[table_name] = model_class
+        self._create_table(table_name, model_class)
+
+    def _create_table(self, table_name: str, model_class: Type['Model']) -> None:
+        columns = ', '.join([f"{field_name} {field.to_sql_type()}" for field_name, field in model_class._fields.items()])
+        query = f"CREATE TABLE IF NOT EXISTS {table_name} ({columns})"
+        self._database_repository.execute(query)
+
+    def get(self, model_class: Type['Model'], **kwargs) -> 'Model':
+        table_name = model_class.__name__.lower()
+        result = self._database_repository.read(table_name, kwargs)
+        if result:
+            return model_class(database_connection=self._database_repository._connection, **result[0])
+        else:
+            return None
+
+    def filter(self, model_class: Type['Model'], **kwargs) -> Tuple['Model']:
+        table_name = model_class.__name__.lower()
+        results = self._database_repository.read(table_name, kwargs)
+        return tuple(model_class(database_connection=self._database_repository._connection, **row) for row in results)
+
+    def all(self, model_class: Type['Model']) -> Tuple['Model']:
+        table_name = model_class.__name__.lower()
+        results = self._database_repository.read(table_name, {})
+        return tuple(model_class(database_connection=self._database_repository._connection, **row) for row in results)
+
+    def save(self, instance: 'Model') -> None:
+        table_name = instance.__class__.__name__.lower()
+        data = {field: getattr(instance, field) for field in instance._fields}
+        self._database_repository.create(table_name, data)
+
+    def delete(self, instance: 'Model') -> None:
+        table_name = instance.__class__.__name__.lower()
+        self._database_repository.delete(table_name, getattr(instance, instance._primary_key))
+
+class BaseDataType:
+    def __init__(self, primary_key: bool = False, auto_increment: bool = False, null: bool = False, default: Any = None):
+        self.primary_key = primary_key
+        self.auto_increment = auto_increment
+        self.null = null
+        self.default = default
+
+    def to_db_value(self, value: Any) -> Any:
+        return value
+
+    def to_sql_type(self) -> str:
+        raise NotImplementedError
+
+    def validate(self, value: Any) -> bool:
+        return True
+
+@dataclass
+class IntegerField(BaseDataType):
+    def to_sql_type(self) -> str:
+        return "INTEGER"
+
+    def validate(self, value: Any) -> bool:
+        return isinstance(value, int)
+
+@dataclass
+class CharField(BaseDataType):
+    max_length: int
+
+    def to_sql_type(self) -> str:
+        return f"VARCHAR({self.max_length})"
+
+    def validate(self, value: Any) -> bool:
+        return isinstance(value, str) and len(value) <= self.max_length
+
+@dataclass
+class DateTimeField(BaseDataType):
+    auto_now: bool = False
+    auto_now_add: bool = False
+
+    def to_db_value(self, value: Any) -> str:
+        if self.auto_now or self.auto_now_add:
+            return datetime.now().isoformat()
+        return value.isoformat()
+
+    def to_sql_type(self) -> str:
+        return "DATETIME"
+
+    def validate(self, value: Any) -> bool:
+        return isinstance(value, datetime)
