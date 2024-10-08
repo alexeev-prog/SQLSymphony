@@ -77,11 +77,19 @@ Once installed, you can start using the library in your Python projects. Check o
 ### Creating a Model
 
 ```python
-from sqlsymphony import Model, fields
+from sqlsymphony_orm.datatypes.fields import IntegerField, CharField
+from sqlsymphony_orm.models.orm_models import Model
+
 
 class User(Model):
-    id = fields.IntegerField(primary_key=True)
-    name = fields.CharField()
+	__tablename__ = 'Users'
+	__database__ = 'users.db'
+
+	id = IntegerField(primary_key=True)
+	name = CharField(max_length=32, unique=True)
+
+	def __repr__(self):
+		return f'<User {self.id}>'
 ```
 
 ### Performing CRUD Operations
@@ -90,43 +98,16 @@ class User(Model):
 <summary>Create a new record</summary>
 
 ```python
-user = User(name='John Doe', email='john.doe@example.com')
+user = User(name='Charlie')
 user.save()
+
+user2 = User(name='John')
+user2.save()
+
+print(user.objects.fetch())
 ```
 
 </details>
-
-<details>
-<summary>Read records</summary>
-
-```python
-all_users = User.all()
-user = User.get(id=1)
-```
-
-</details>
-
-<details>
-<summary>Update a record</summary>
-
-```python
-user = User.get(id=1)
-user.email = 'new_email@example.com'
-user.save()
-```
-
-</details>
-
-<details>
-<summary>Delete a record</summary>
-
-```python
-user = User.get(id=1)
-user.delete()
-```
-
-</details>
-
 
 ## 🤝 Contributing
 

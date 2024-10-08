@@ -4,7 +4,7 @@ from rich.table import Table
 
 install(show_locals=True)
 
-__version__ = "0.1.0"
+__version__ = "0.1.2"
 __author__ = 'alexeev-prog'
 __license__ = 'GNU GPL v3'
 __language__ = 'Python 3.12.7'

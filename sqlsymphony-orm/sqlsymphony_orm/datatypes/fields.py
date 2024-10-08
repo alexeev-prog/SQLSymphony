@@ -99,7 +99,8 @@ class IntegerField(BaseDataType):
 	"""
 	This class describes an integer field.
 	"""
-	def __init__(self, auto_increment: bool = False, max_length: int = None, min_length: int = None, primary_key: bool = False, unique: bool = False, null: bool = True, default: int = None):
+	def __init__(self, auto_increment: bool = False, max_length: int = None, min_length: int = None, 
+					primary_key: bool = False, unique: bool = False, null: bool = True, default: int = None):
 		"""
 		Constructs a new instance.
 
@@ -120,6 +121,12 @@ class IntegerField(BaseDataType):
 
 		self.min_length = min_length
 		self.max_length = max_length
+
+		if self.primary_key and self.default is not None:
+			self.value = default
+		elif self.primary_key and self.default is None:
+			self.value = 0
+
 
 	def validate(self, value: Any) -> bool:
 		"""
