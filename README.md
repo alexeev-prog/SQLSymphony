@@ -68,17 +68,48 @@ Once installed, you can start using the library in your Python projects. Check o
 ```python
 from sqlsymphony_orm.datatypes.fields import IntegerField, CharField
 from sqlsymphony_orm.models.orm_models import Model
+from sqlsymphony_orm.queries import raw_sql_query
+from sqlsymphony_orm.database.connection import SQLiteDBConnector
 
 
 class User(Model):
-	__tablename__ = 'Users'
-	__database__ = 'users.db'
+    __tablename__ = "Users"
+    __database__ = "users.db"
 
-	id = IntegerField(primary_key=True)
-	name = CharField(max_length=32, unique=True)
+    id = IntegerField(primary_key=True)
+    name = CharField(max_length=32, unique=True, null=False)
 
-	def __repr__(self):
-		return f'<User {self.id}>'
+    def __repr__(self):
+        return f"<User {self.id} {self.name}>"
+
+connector = SQLiteDBConnector().connect()
+
+
+@raw_sql_query(connector=connector)
+def create_table(name: str):
+    return 'CREATE TABLE IF NOT EXISTS %s (id INTEGER, name TEXT NOT NULL)' % (name,)
+
+
+create_table('Memo')
+
+
+user = User(name="Charlie")
+user.save()
+
+user2 = User(name="Carl")
+user2.save()
+
+user2.update(name="Bobby")
+
+user3 = User(name="John")
+user3.save()
+
+user3.delete()
+
+print(user.objects.fetch())
+print(user.objects.filter(name="Bobby"))
+
+user.view_table_info()
 ```
 
 ### Performing CRUD Operations
@@ -166,7 +197,7 @@ We welcome contributions from the community! If you'd like to help improve SqlSy
 If you encounter any issues or have questions about SqlSymphony, please:
 
 - Check the [documentation](https://alexeev-prog.github.io/SQLSymphony) for answers
-- Open an [issue on GitHub](https://github.com/alexeev-prog/SqlSymphony/issues/new)
+- Open an [issue on GitHub](https://github.com/alexeev-prog/SQLSymphony/issues/new)
 - Reach out to the project maintainers via the [mailing list](mailto:alexeev.dev@mail.ru)
 
 ## ☑️ Todos

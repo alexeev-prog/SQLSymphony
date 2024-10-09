@@ -4,143 +4,151 @@ from typing import Tuple
 
 from rich.console import Console
 from rich.table import Table
+from rich import print
 
 
 class DBConnector(ABC):
-    """
-    This class describes a db connector.
-    """
+	"""
+	This class describes a db connector.
+	"""
 
-    def __new__(cls, *args, **kwargs):
-        """
-        New class
+	def __new__(cls, *args, **kwargs):
+		"""
+		New class
 
-        :param      cls:     The cls
-        :type       cls:     list
-        :param      args:    The arguments
-        :type       args:    list
-        :param      kwargs:  The keywords arguments
-        :type       kwargs:  dictionary
+		:param		cls:	 The cls
+		:type		cls:	 list
+		:param		args:	 The arguments
+		:type		args:	 list
+		:param		kwargs:	 The keywords arguments
+		:type		kwargs:	 dictionary
 
-        :returns:   cls instance
-        :rtype:     self
-        """
-        if not hasattr(cls, "instance"):
-            cls.instance = super(DBConnector, cls).__new__(cls, *args, **kwargs)
+		:returns:	cls instance
+		:rtype:		self
+		"""
+		if not hasattr(cls, "instance"):
+			cls.instance = super(DBConnector, cls).__new__(cls, *args, **kwargs)
 
-        return cls.instance
+		return cls.instance
 
-    @abstractmethod
-    def connect(self, database_name: str):
-        """
-        Connect to database
+	@abstractmethod
+	def connect(self, database_name: str):
+		"""
+		Connect to database
 
-        :param      database_name:        The database name
-        :type       database_name:        str
+		:param		database_name:		  The database name
+		:type		database_name:		  str
 
-        :raises     NotImplementedError:  Abstract method
-        """
-        raise NotImplementedError()
+		:raises		NotImplementedError:  Abstract method
+		"""
+		raise NotImplementedError()
 
-    @abstractmethod
-    def commit(self):
-        """
-        Commit changes to database
+	@abstractmethod
+	def commit(self):
+		"""
+		Commit changes to database
 
-        :raises     NotImplementedError:  Abstract method
-        """
-        raise NotImplementedError()
+		:raises		NotImplementedError:  Abstract method
+		"""
+		raise NotImplementedError()
 
-    @abstractmethod
-    def fetch(self, query: str):
-        """
-        Fetches the given query.
+	@abstractmethod
+	def fetch(self, query: str):
+		"""
+		Fetches the given query.
 
-        :param      query:                The query
-        :type       query:                str
+		:param		query:				  The query
+		:type		query:				  str
 
-        :raises     NotImplementedError:  Abstract method
-        """
-        raise NotImplementedError()
+		:raises		NotImplementedError:  Abstract method
+		"""
+		raise NotImplementedError()
 
 
 class SQLiteDBConnector(DBConnector):
-    """
-    This class describes a sqlite db connector.
-    """
+	"""
+	This class describes a sqlite db connector.
+	"""
 
-    def __new__(cls, *args, **kwargs):
-        """
-        New class
+	def __new__(cls, *args, **kwargs):
+		"""
+		New class
 
-        :param      cls:     The cls
-        :type       cls:     list
-        :param      args:    The arguments
-        :type       args:    list
-        :param      kwargs:  The keywords arguments
-        :type       kwargs:  dictionary
+		:param		cls:	 The cls
+		:type		cls:	 list
+		:param		args:	 The arguments
+		:type		args:	 list
+		:param		kwargs:	 The keywords arguments
+		:type		kwargs:	 dictionary
 
-        :returns:   cls instance
-        :rtype:     self
-        """
-        if not hasattr(cls, "instance"):
-            cls.instance = super(SQLiteDBConnector, cls).__new__(cls, *args, **kwargs)
+		:returns:	cls instance
+		:rtype:		self
+		"""
+		if not hasattr(cls, "instance"):
+			cls.instance = super(SQLiteDBConnector, cls).__new__(cls, *args, **kwargs)
 
-        return cls.instance
+		return cls.instance
 
-    def connect(self, database_name: str = "database.db"):
-        """
-        Connect to database
+	def close_connection(self):
+		"""
+		Closes a connection.
+		"""
+		self._connection.close()
+		print("[bold]Connection has been closed[/bold]")
 
-        :param      database_name:  The database name
-        :type       database_name:  str
-        """
-        self._connection = sqlite3.connect(database_name)
+	def connect(self, database_name: str = "database.db"):
+		"""
+		Connect to database
 
-    def commit(self):
-        """
-        Commit changes to database
-        """
-        self._connection.commit()
+		:param		database_name:	The database name
+		:type		database_name:	str
+		"""
+		self._connection = sqlite3.connect(database_name)
 
-    def fetch(self, query: str, values: Tuple = ()) -> list:
-        """
-        Fetch SQL query
+	def commit(self):
+		"""
+		Commit changes to database
+		"""
+		self._connection.commit()
 
-        :param      query:   The query
-        :type       query:   str
-        :param      values:  The values
-        :type       values:  Tuple
+	def fetch(self, query: str, values: Tuple = ()) -> list:
+		"""
+		Fetch SQL query
 
-        :returns:   list with fetched results
-        :rtype:     list
-        """
-        cursor = self._connection.cursor()
+		:param		query:	 The query
+		:type		query:	 str
+		:param		values:	 The values
+		:type		values:	 Tuple
 
-        try:
-            cursor.execute(query, values)
-        except sqlite3.IntegrityError as ex:
-            try:
-                if str(ex).split(":")[0] == "UNIQUE constraint failed":
-                    table = Table(title="SQL Error: UNIQUE", title_style="bold red")
+		:returns:	list with fetched results
+		:rtype:		list
+		"""
+		cursor = self._connection.cursor()
 
-                    table.add_column("Error Type", style="red")
-                    table.add_column("Full info", style="red")
-                    table.add_column("Short explain", style="yellow")
-                    table.add_column("SQL Query", style="green")
+		try:
+			cursor.execute(query, values)
+		except sqlite3.IntegrityError as ex:
+			try:
+				if str(ex).split(":")[0] == "UNIQUE constraint failed":
+					table = Table(title="SQL Error: UNIQUE", title_style="bold red")
 
-                    table.add_row(
-                        "IntegrityError",
-                        str(ex),
-                        "Problem with UNIQUE fields in a table",
-                        f"{query} {values}",
-                    )
+					table.add_column("Error Type", style="red")
+					table.add_column("Full info", style="red")
+					table.add_column("Short explain", style="yellow")
+					table.add_column("SQL Query", style="green")
 
-                    console = Console()
-                    console.print(table)
+					table.add_row(
+						"IntegrityError",
+						str(ex),
+						"Problem with UNIQUE fields in a table",
+						f"{query} {values}",
+					)
 
-                    raise ex
-            except KeyError:
-                raise ex
+					console = Console()
+					console.print(table)
 
-        return cursor.fetchall()
+					raise ex
+			except KeyError:
+				raise ex
+
+		return cursor.fetchall()

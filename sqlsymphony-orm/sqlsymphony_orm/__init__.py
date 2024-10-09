@@ -12,22 +12,22 @@ __pypi_pkg__ = "sqlsymphony_orm"
 
 
 def introduction():
-    table = Table(
-        title="SQLSymphony ORM - powerful and simple ORM for python", expand=True
-    )
+	table = Table(
+		title="SQLSymphony ORM - powerful and simple ORM for python", expand=True
+	)
 
-    table.add_column("Key", style="blue")
-    table.add_column("Value", style="green")
-    table.add_column("Description", style="magenta")
+	table.add_column("Key", style="blue")
+	table.add_column("Value", style="green")
+	table.add_column("Description", style="magenta")
 
-    table.add_row("Version", __version__, "Stable")
-    table.add_row("Author", __author__, "Maintainer&Developer")
-    table.add_row("License", __license__, "License of library")
-    table.add_row("Language", __language__, "Main language")
-    table.add_row("PyPi pep package", __pypi_pkg__, "Package name")
+	table.add_row("Version", __version__, "Stable")
+	table.add_row("Author", __author__, "Maintainer&Developer")
+	table.add_row("License", __license__, "License of library")
+	table.add_row("Language", __language__, "Main language")
+	table.add_row("PyPi pep package", __pypi_pkg__, "Package name")
 
-    console = Console()
-    console.print(table)
+	console = Console()
+	console.print(table)
 
 
 introduction()
