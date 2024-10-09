@@ -7,7 +7,24 @@ from rich.table import Table
 
 
 class DBConnector(ABC):
+    """
+    This class describes a db connector.
+    """
+
     def __new__(cls, *args, **kwargs):
+        """
+        New class
+
+        :param      cls:     The cls
+        :type       cls:     list
+        :param      args:    The arguments
+        :type       args:    list
+        :param      kwargs:  The keywords arguments
+        :type       kwargs:  dictionary
+
+        :returns:   cls instance
+        :rtype:     self
+        """
         if not hasattr(cls, "instance"):
             cls.instance = super(DBConnector, cls).__new__(cls, *args, **kwargs)
 
@@ -15,31 +32,89 @@ class DBConnector(ABC):
 
     @abstractmethod
     def connect(self, database_name: str):
+        """
+        Connect to database
+
+        :param      database_name:        The database name
+        :type       database_name:        str
+
+        :raises     NotImplementedError:  Abstract method
+        """
         raise NotImplementedError()
 
     @abstractmethod
     def commit(self):
+        """
+        Commit changes to database
+
+        :raises     NotImplementedError:  Abstract method
+        """
         raise NotImplementedError()
 
     @abstractmethod
-    def fetch(self, query):
+    def fetch(self, query: str):
+        """
+        Fetches the given query.
+
+        :param      query:                The query
+        :type       query:                str
+
+        :raises     NotImplementedError:  Abstract method
+        """
         raise NotImplementedError()
 
 
 class SQLiteDBConnector(DBConnector):
+    """
+    This class describes a sqlite db connector.
+    """
+
     def __new__(cls, *args, **kwargs):
+        """
+        New class
+
+        :param      cls:     The cls
+        :type       cls:     list
+        :param      args:    The arguments
+        :type       args:    list
+        :param      kwargs:  The keywords arguments
+        :type       kwargs:  dictionary
+
+        :returns:   cls instance
+        :rtype:     self
+        """
         if not hasattr(cls, "instance"):
             cls.instance = super(SQLiteDBConnector, cls).__new__(cls, *args, **kwargs)
 
         return cls.instance
 
     def connect(self, database_name: str = "database.db"):
+        """
+        Connect to database
+
+        :param      database_name:  The database name
+        :type       database_name:  str
+        """
         self._connection = sqlite3.connect(database_name)
 
     def commit(self):
+        """
+        Commit changes to database
+        """
         self._connection.commit()
 
-    def fetch(self, query, values: Tuple = ()):
+    def fetch(self, query: str, values: Tuple = ()) -> list:
+        """
+        Fetch SQL query
+
+        :param      query:   The query
+        :type       query:   str
+        :param      values:  The values
+        :type       values:  Tuple
+
+        :returns:   list with fetched results
+        :rtype:     list
+        """
         cursor = self._connection.cursor()
 
         try:

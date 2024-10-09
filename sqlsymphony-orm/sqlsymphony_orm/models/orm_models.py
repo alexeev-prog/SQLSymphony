@@ -122,6 +122,12 @@ class Model(metaclass=MetaModel):
             self.objects.commit_changes()
 
     def update(self, **kwargs):
+        """
+        Update sql query
+
+        :param      kwargs:  The keywords arguments
+        :type       kwargs:  dictionary
+        """
         for key, value in kwargs.items():
             if hasattr(self, key):
                 if value is not None and self._original_fields[key].validate(value):
@@ -130,6 +136,14 @@ class Model(metaclass=MetaModel):
                     self.objects.update(self._table_name, key, orig_field, value)
 
     def delete(self, field_name: str = None, field_value: Any = None):
+        """
+        Delete model
+
+        :param      field_name:   The field name
+        :type       field_name:   str
+        :param      field_value:  The field value
+        :type       field_value:  Any
+        """
         if field_name is not None and field_value is not None:
             self.objects.delete(self._table_name, field_name, field_value)
             return

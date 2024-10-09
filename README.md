@@ -17,27 +17,16 @@ SQLSymphony is a **lightweight** ✨, **powerful** 💪, and **high-performance*
 
 <p align='center'>SQLSymphony ORM - powerful and simple ORM for python</p>
 
-```
-┏━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Key              ┃ Value           ┃ Description          ┃
-┡━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━┩
-│ Version          │ 0.1.0           │ Stable               │
-│ Author           │ alexeev-prog    │ Maintainer&Developer │
-│ License          │ GNU GPL v3      │ License of library   │
-│ Language         │ Python 3.12.7   │ Main language        │
-│ PyPi pep package │ sqlsymphony_orm │ Package name         │
-└──────────────────┴─────────────────┴──────────────────────┘
-```
-
 ## 🌟 Comparison with Alternatives
 
-| Feature                          | SqlSymphony | SQLAlchemy | Peewee  |
-| -------------------------------- | ----------- | ---------- | ------- |
-| 💫 Simplicity                    | ✔️         | ✔️         | ❌      |
-| 🚀 Performance                   | ✔️         | ❌         | ✔️      |
-| 🌐 Database Agnosticism          | ❌         | ✔️         | ❌      |
-| 📚 Comprehensive Documentation   | ✔️         | ✔️         | ✔️      |
-| 🔥 Active Development            | ✔️         | ✔️         | ❌      |
+| Feature                          | SqlSymphony  | SQLAlchemy | Peewee  |
+| -------------------------------- | ------------ | ---------- | ------- |
+| 💫 Simplicity                    | ✔️          | ✔️         | ❌      |
+| 🚀 Performance                   | ✔️          | ❌         | ✔️      |
+| 🌐 Database Agnosticism          | ❌          | ✔️         | ❌      |
+| 📚 Comprehensive Documentation   | ✔️          | ✔️         | ✔️      |
+| 🔥 Active Development            | ✔️          | ✔️         | ❌      |
+| ⚡️ ASYNC Support                 | COMING SOON | ❌         | ❌      |
 
 ## 🤔 Why Choose SqlSymphony?
 

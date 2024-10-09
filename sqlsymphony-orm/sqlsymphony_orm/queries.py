@@ -52,17 +52,37 @@ class BaseExp(ABC):
 
     @abstractmethod
     def add(self, *args, **kwargs):
+        """
+        Add params
+
+        :param      args:                 The arguments
+        :type       args:                 list
+        :param      kwargs:               The keywords arguments
+        :type       kwargs:               dictionary
+        """
         raise NotImplementedError()
 
-    def definition(self):
+    def definition(self) -> str:
+        """
+        Get the definition of query
+
+        :returns:   sql query
+        :rtype:     str
+        """
         return self.name + "\n\t" + self.line() + "\n"
 
     @abstractmethod
     def line(self):
+        """
+        Get line
+        """
         raise NotImplementedError()
 
     @abstractmethod
     def __bool__(self):
+        """
+        Boolean magic function
+        """
         raise NotImplementedError()
 
 
