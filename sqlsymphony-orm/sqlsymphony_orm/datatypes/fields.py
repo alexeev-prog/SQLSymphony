@@ -109,8 +109,8 @@ class IntegerField(BaseDataType):
 	def __init__(
 		self,
 		auto_increment: bool = False,
-		max_length: int = None,
-		min_length: int = None,
+		max_value: int = None,
+		min_value: int = None,
 		primary_key: bool = False,
 		unique: bool = False,
 		null: bool = True,
@@ -134,8 +134,8 @@ class IntegerField(BaseDataType):
 		self.default: int = default
 		self.auto_increment: bool = auto_increment
 
-		self.min_length = min_length
-		self.max_length = max_length
+		self.min_value = min_value
+		self.max_value = max_value
 
 		if self.primary_key and self.default is not None:
 			self.value = default
@@ -156,9 +156,9 @@ class IntegerField(BaseDataType):
 			return True
 		if value is None and self.null:
 			return True
-		if self.min_length is not None and value < self.min_length:
+		if self.min_value is not None and value < self.min_value:
 			return False
-		if self.max_length is not None and value > self.max_length:
+		if self.max_value is not None and value > self.max_value:
 			return False
 
 		return True

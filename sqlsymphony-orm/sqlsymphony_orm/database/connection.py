@@ -6,8 +6,6 @@ from rich.console import Console
 from rich.table import Table
 from rich import print
 
-from sqlsymphony_orm.performance.cache import cached, SingletonCache, InMemoryCache
-
 
 class DBConnector(ABC):
 	"""
@@ -113,7 +111,6 @@ class SQLiteDBConnector(DBConnector):
 		"""
 		self._connection.commit()
 
-	@cached(SingletonCache(InMemoryCache, max_size=1000, ttl=60))
 	def fetch(self, query: str, values: Tuple = ()) -> list:
 		"""
 		Fetch SQL query

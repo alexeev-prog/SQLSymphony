@@ -88,7 +88,7 @@ class SQLiteDBManager(DBManager):
 		:param		values:		 The values
 		:type		values:		 tuple
 		"""
-		query = f"INSERT INTO {table_name} ({columns}) VALUES ({count})"
+		query = f"INSERT OR IGNORE INTO {table_name} ({columns}) VALUES ({count})"
 
 		self._connector.fetch(query, values)
 		self._connector.commit()

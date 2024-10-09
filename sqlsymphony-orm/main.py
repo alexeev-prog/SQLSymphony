@@ -1,32 +1,24 @@
-from sqlsymphony_orm.datatypes.fields import IntegerField, CharField
+from sqlsymphony_orm.datatypes.fields import IntegerField, CharField, TextField
 from sqlsymphony_orm.models.orm_models import Model
 
 
-class User(Model):
-	__tablename__ = "Users"
-	__database__ = "users.db"
+class Video(Model):
+	__tablename__ = "Videos"
+	__database__ = "videos.db"
 
 	id = IntegerField(primary_key=True)
-	name = CharField(max_length=32, unique=True, null=False)
+	author = CharField(max_length=32)
+	title = CharField(max_length=64, null=False)
+	description = TextField(null=False)
+	views = IntegerField(null=False, default=0)
 
 	def __repr__(self):
-		return f"<User {self.id} {self.name}>"
+		return f"<Video {self.id} {self.title}>"
 
 
-user = User(name="Charlie")
-user.save()
+video = Video(author='Alexeev', title='How to make your own ORM in python', description='Big video about python coding')
+video.update(views=100)
+print(video.views)
+video.save()
 
-user2 = User(name="Carl")
-user2.save()
-
-user2.update(name="Bobby")
-
-user3 = User(name="John")
-user3.save()
-
-user3.delete()
-
-print(user.objects.fetch())
-print(user.objects.filter(name="Bobby"))
-
-user.view_table_info()
+print(video.objects.fetch())

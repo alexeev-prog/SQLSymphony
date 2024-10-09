@@ -89,7 +89,7 @@ class Model(metaclass=MetaModel):
 			value = kwargs.get(field_name, None)
 
 			if not kwargs.get("manager", False):
-				if not field.null and value is None:
+				if not field.null and value is None and field.default is None:
 					raise ValueError(
 						f"Field {field_name} is set to NOT NULL, but it is empty"
 					)
@@ -98,8 +98,12 @@ class Model(metaclass=MetaModel):
 				setattr(self, field_name, field.to_db_value(value))
 				self.fields[field_name] = getattr(self, field_name)
 			else:
+				if value is not None and not field.validate(value):
+					raise ValueError(f'Validation error: field {field}; field name "{field_name}"; value "{value}"')
+
 				setattr(self, field_name, field.default)
 				self.fields[field_name] = getattr(self, field_name)
+
 
 	def view_table_info(self):
 		"""
