@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "sqlsymphony-orm"
-version = "0.1.4"
-description = ""
+version = "0.1.5"
+description = "The elegant and powerful SQLite3 ORM for Python"
 authors = ["alexeev-prog <dev.alexeev@mail.ru>"]
 readme = "README.md"
 
@@ -12,7 +12,11 @@ ruff = "^0.6.9"
 pycolor-palette-loguru = "^0.1.4"
 loguru = "^0.7.2"
 
-
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[project]
+keywords = ["sqlsymphony", "OOP", "database", "sql", "sqlite", "ORM"]
+license = {text = "GNU GPL v3"}
+

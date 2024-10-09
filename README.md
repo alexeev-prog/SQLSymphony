@@ -112,6 +112,45 @@ print(user.objects.filter(name="Bobby"))
 user.view_table_info()
 ```
 
+<details>
+<summary>Cache Performance</summary>
+
+```python
+from sqlsymphony_orm.performance.cache import cached, SingletonCache, InMemoryCache
+
+
+@cached(SingletonCache(InMemoryCache, max_size=1000, ttl=60))
+def fetch_data(param1: str, param2: str):
+	return {'data': f'{param1} and {param2}'}
+
+result1 = fetch_data('foo', 'bar')
+print(result1) # caching
+result2 = fetch_data('foo', 'bar')
+print(result2) # cached
+
+result3 = fetch_data('baz', 'qux')
+print(result3) # not cached
+```
+
+</details>
+
+<details>
+<summary>RAW SQL Query</summary>
+
+```python
+from sqlsymphony_orm.database.connection import SQLiteDBConnector
+from sqlsymphony_orm.queries import raw_sql_query
+
+connector = SQLiteDBConnector().connect('database.db')
+
+
+@raw_sql_query(connector=connector, values=('John',))
+def insert():
+	return 'INSERT INTO Users (name) VALUES (?)'
+```
+
+</details>
+
 ### Performing CRUD Operations
 
 <details>

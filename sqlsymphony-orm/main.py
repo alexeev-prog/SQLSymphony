@@ -1,6 +1,5 @@
 from sqlsymphony_orm.datatypes.fields import IntegerField, CharField
 from sqlsymphony_orm.models.orm_models import Model
-from sqlsymphony_orm.database.connection import SQLiteDBConnector
 
 
 class User(Model):
@@ -12,9 +11,6 @@ class User(Model):
 
 	def __repr__(self):
 		return f"<User {self.id} {self.name}>"
-
-
-connector = SQLiteDBConnector().connect()
 
 
 user = User(name="Charlie")

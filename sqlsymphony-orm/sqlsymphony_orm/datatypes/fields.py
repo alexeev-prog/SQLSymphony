@@ -46,7 +46,7 @@ class BaseDataType(ABC):
 		:returns:	if the value is verified then True, otherwise False
 		:rtype:		bool
 		"""
-		pass
+		raise NotImplementedError()
 
 	@abstractmethod
 	def to_db_value(self, value: Any) -> Any:
@@ -59,7 +59,7 @@ class BaseDataType(ABC):
 		:returns:	db value
 		:rtype:		Any
 		"""
-		pass
+		raise NotImplementedError()
 
 	@abstractmethod
 	def from_db_value(self, value: Any) -> Any:
@@ -72,7 +72,7 @@ class BaseDataType(ABC):
 		:returns:	db value
 		:rtype:		Any
 		"""
-		pass
+		raise NotImplementedError()
 
 	@abstractmethod
 	def view_table_info(self):
@@ -94,7 +94,7 @@ class BaseDataType(ABC):
 
 	@abstractmethod
 	def to_sql_type(self) -> str:
-		raise NotImplementedError
+		raise NotImplementedError()
 
 	def __str__(self):
 		return "<BaseDataType>"

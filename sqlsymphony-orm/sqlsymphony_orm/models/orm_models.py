@@ -114,7 +114,7 @@ class Model(metaclass=MetaModel):
 
 		for k, v in self._get_formatted_sql_fields().items():
 			table.add_row(
-				str(k), str(self._original_fields[k]), str(v), self.fields[str(k)]
+				str(k), str(self._original_fields[k]), str(v), str(self.fields[str(k)])
 			)
 
 		console = Console()

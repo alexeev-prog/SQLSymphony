@@ -3,6 +3,7 @@ from typing import Any
 
 from sqlsymphony_orm.queries import QueryBuilder
 from sqlsymphony_orm.database.connection import DBConnector, SQLiteDBConnector
+from sqlsymphony_orm.performance.cache import cached, SingletonCache, InMemoryCache
 
 
 class DBManager(ABC):
@@ -110,6 +111,7 @@ class SQLiteDBManager(DBManager):
 		self._connector.fetch(query, (new_value, orig_field))
 		self._connector.commit()
 
+	@cached(SingletonCache(InMemoryCache, max_size=1000, ttl=60))
 	def filter(self, *args, **kwargs) -> list:
 		"""
 		Filter models (WHERE sql query)
@@ -168,6 +170,7 @@ class SQLiteDBManager(DBManager):
 		self._connector.fetch(query, (field_value,))
 		self._connector.commit()
 
+	@cached(SingletonCache(InMemoryCache, max_size=1000, ttl=60))
 	def fetch(self) -> list:
 		"""
 		Fetches the object.

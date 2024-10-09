@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from rich.console import Console
 from rich.table import Table
+from sqlsymphony_orm.performance.cache import cached, SingletonCache, InMemoryCache
 
 AND = "and"
 OR = "or"
@@ -23,6 +24,7 @@ class Q:
 		self.separator = exp_type
 		self._params = kwargs
 
+	@cached(SingletonCache(InMemoryCache, max_size=1000, ttl=60))
 	def __str__(self) -> str:
 		"""
 		Returns a string representation of the object.
@@ -62,6 +64,7 @@ class BaseExp(ABC):
 		"""
 		raise NotImplementedError()
 
+	@cached(SingletonCache(InMemoryCache, max_size=1000, ttl=60))
 	def definition(self) -> str:
 		"""
 		Get the definition of query
@@ -110,6 +113,7 @@ class Select(BaseExp):
 		"""
 		self._params.extend(args)
 
+	@cached(SingletonCache(InMemoryCache, max_size=1000, ttl=60))
 	def line(self) -> str:
 		"""
 		Get line
@@ -154,6 +158,7 @@ class From(BaseExp):
 		"""
 		self._params.extend(args)
 
+	@cached(SingletonCache(InMemoryCache, max_size=1000, ttl=60))
 	def line(self) -> str:
 		"""
 		Get line
@@ -207,6 +212,7 @@ class Where(BaseExp):
 		self._q = Q(exp_type, **kwargs)
 		return self._q
 
+	@cached(SingletonCache(InMemoryCache, max_size=1000, ttl=60))
 	def line(self):
 		"""
 		Get line
@@ -237,6 +243,7 @@ class QueryBuilder:
 		"""
 		self._data = {"select": Select(), "from": From(), "where": Where()}
 
+	@cached(SingletonCache(InMemoryCache, max_size=1000, ttl=60))
 	def SELECT(self, *args) -> "QueryBuilder":
 		"""
 		SQL query `select`
@@ -250,6 +257,7 @@ class QueryBuilder:
 		self._data["select"].add(*args)
 		return self
 
+	@cached(SingletonCache(InMemoryCache, max_size=1000, ttl=60))
 	def FROM(self, *args) -> "QueryBuilder":
 		"""
 		SQL query `from`
@@ -263,6 +271,7 @@ class QueryBuilder:
 		self._data["from"].add(*args)
 		return self
 
+	@cached(SingletonCache(InMemoryCache, max_size=1000, ttl=60))
 	def WHERE(self, exp_type: str = AND, **kwargs) -> "QueryBuilder":
 		"""
 		SQL query `where`
@@ -307,6 +316,7 @@ class QueryBuilder:
 		console = Console()
 		console.print(table)
 
+	@cached(SingletonCache(InMemoryCache, max_size=1000, ttl=60))
 	def __str__(self) -> str:
 		"""
 		Returns a string representation of the object.
@@ -331,6 +341,7 @@ def raw_sql_query(connector: "DBConnector" = None, values: tuple = ()):
 	"""
 
 	def actual_decorator(func):
+		@cached(SingletonCache(InMemoryCache, max_size=1000, ttl=60))
 		def wrapper(*args, **kwargs):
 			query = func(*args, **kwargs)
 
