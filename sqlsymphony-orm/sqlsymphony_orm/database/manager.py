@@ -1,77 +1,97 @@
-import sqlite3
 from abc import ABC, abstractmethod
-from typing import Tuple, Dict, Any
+from typing import Any
 
 from sqlsymphony_orm.queries import QueryBuilder
 from sqlsymphony_orm.database.connection import DBConnector, SQLiteDBConnector
+from sqlsymphony_orm.models.orm_models import Model
 
 
 class DBManager(ABC):
-	def __init__(self, model_class: 'Model'):
-		self.model_class = model_class
-		self._model_fields = model_class._original_fields.keys()
+    def __init__(self, model_class: Model):
+        self.model_class = model_class
+        self._model_fields = model_class._original_fields.keys()
 
-		q = QueryBuilder()
+        q = QueryBuilder()
 
-		self.q = q.SELECT(*self._model_fields).FROM(model_class._table_name)
-		self.connector = DBConnector()
+        self.q = q.SELECT(*self._model_fields).FROM(model_class._table_name)
+        self.connector = DBConnector()
 
-	@abstractmethod
-	def filter(self, *args, **kwargs):
-		raise NotImplementedError()
+    @abstractmethod
+    def filter(self, *args, **kwargs):
+        raise NotImplementedError()
 
-	@abstractmethod
-	def fetch(self):
-		raise NotImplementedError()
+    @abstractmethod
+    def fetch(self):
+        raise NotImplementedError()
 
 
 class SQLiteDBManager(DBManager):
-	def __init__(self, model_class: 'Model', database_name: str='database.db'):
-		self.model_class = model_class
-		self._model_fields = model_class._original_fields.keys()
+    def __init__(self, model_class: "Model", database_name: str = "database.db"):
+        self.model_class = model_class
+        self._model_fields = model_class._original_fields.keys()
 
-		q = QueryBuilder()
+        q = QueryBuilder()
 
-		self.q = q.SELECT(*self._model_fields).FROM(model_class._table_name)
-		self._connector = SQLiteDBConnector()
+        self.q = q.SELECT(*self._model_fields).FROM(model_class._table_name)
+        self._connector = SQLiteDBConnector()
 
-		if model_class._table_name != 'model':
-			self._connector.connect(database_name)
+        if model_class._table_name != "model":
+            self._connector.connect(database_name)
 
-	def insert(self, table_name, columns, count, values):
-		query = f'INSERT INTO {table_name} ({columns}) VALUES ({count})'
+    def insert(self, table_name, columns, count, values):
+        query = f"INSERT INTO {table_name} ({columns}) VALUES ({count})"
 
-		self._connector.fetch(query, values)
-		self._connector.commit()
+        self._connector.fetch(query, values)
+        self._connector.commit()
 
-	def filter(self, *args, **kwargs):
-		self.q = self.q.WHERE(*args, **kwargs)
-		return self
+    def update(self, table_name, key, orig_field, new_value):
+        query = f"UPDATE {table_name} SET {key} = ? WHERE {key} = ?"
 
-	def create_table(self, table_name: str, fields: dict):
-		columns = [f'{k} {v}' for k, v in fields.items()]
+        self._connector.fetch(query, (new_value, orig_field))
+        self._connector.commit()
 
-		query = f'CREATE TABLE IF NOT EXISTS {table_name} ('
+    def filter(self, *args, **kwargs):
+        self.q = self.q.WHERE(*args, **kwargs)
+        return self.fetch()
 
-		for column in columns:
-			query += f'{column},'
+    def commit_changes(self):
+        self._connector.commit()
 
-		query = query[:-1]
-		query += ')'
+    def create_table(self, table_name: str, fields: dict):
+        columns = [f"{k} {v}" for k, v in fields.items()]
 
-		self._connector.fetch(query)
+        query = f"CREATE TABLE IF NOT EXISTS {table_name} ("
 
-	def fetch(self):
-		q = str(self.q)
-		db_results = self._connector.fetch(q)
-		results = []
+        for column in columns:
+            query += f"{column},"
 
-		for row in db_results:
-			model = self.model_class()
+        query = query[:-1]
+        query += ")"
 
-			for field, val in zip(self._model_fields, row):
-				setattr(model, field, val)
+        self._connector.fetch(query)
 
-			results.append(model)
+    def delete(self, table_name: str, field_name: str, field_value: Any):
+        query = f"DELETE FROM {table_name} WHERE {field_name} = ?"
 
-		return results
+        self._connector.fetch(query, (field_value,))
+        self._connector.commit()
+
+    def fetch(self):
+        q = str(self.q)
+        db_results = self._connector.fetch(q)
+        self.q = (
+            QueryBuilder()
+            .SELECT(*self._model_fields)
+            .FROM(self.model_class._table_name)
+        )
+        results = []
+
+        for row in db_results:
+            model = self.model_class(manager=True)
+
+            for field, val in zip(self._model_fields, row):
+                setattr(model, field, val)
+
+            results.append(model)
+
+        return results

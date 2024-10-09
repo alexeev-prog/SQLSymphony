@@ -77,11 +77,19 @@ Once installed, you can start using the library in your Python projects. Check o
 ### Creating a Model
 
 ```python
-from sqlsymphony import Model, fields
+from sqlsymphony_orm.datatypes.fields import IntegerField, CharField
+from sqlsymphony_orm.models.orm_models import Model
+
 
 class User(Model):
-    id = fields.IntegerField(primary_key=True)
-    name = fields.CharField()
+	__tablename__ = 'Users'
+	__database__ = 'users.db'
+
+	id = IntegerField(primary_key=True)
+	name = CharField(max_length=32, unique=True)
+
+	def __repr__(self):
+		return f'<User {self.id}>'
 ```
 
 ### Performing CRUD Operations
@@ -90,43 +98,75 @@ class User(Model):
 <summary>Create a new record</summary>
 
 ```python
-user = User(name='John Doe', email='john.doe@example.com')
+user = User(name='Charlie')
 user.save()
+
+user2 = User(name='John')
+user2.save()
+
+print(user.objects.fetch())
 ```
 
 </details>
 
 <details>
-<summary>Read records</summary>
+<summary>Update record</summary>
 
 ```python
-all_users = User.all()
-user = User.get(id=1)
+user2 = User(name="Carl")
+user2.save()
+
+user2.update(name="Bobby")
+
+print(user.objects.fetch())
 ```
 
 </details>
 
 <details>
-<summary>Update a record</summary>
+<summary>Delete record</summary>
 
 ```python
-user = User.get(id=1)
-user.email = 'new_email@example.com'
+user = User(name="Charlie")
 user.save()
+
+user2 = User(name="Carl")
+user2.save()
+
+user3 = User(name="John")
+user3.save()
+
+user3.delete() # delete user3
+# OR
+user3.delete(field_name="name", field_value="Carl") # delete user2
+
+print(user.objects.fetch())
 ```
 
 </details>
 
 <details>
-<summary>Delete a record</summary>
+<summary>Filter</summary>
 
 ```python
-user = User.get(id=1)
-user.delete()
+user = User(name="Charlie")
+user.save()
+
+user2 = User(name="Carl")
+user2.save()
+
+user2.update(name="Bobby")
+
+user3 = User(name="John")
+user3.save()
+
+user3.delete()
+
+print(user.objects.fetch())
+print(user.objects.filter(name="Bobby"))
 ```
 
 </details>
-
 
 ## 🤝 Contributing
 
@@ -140,6 +180,11 @@ If you encounter any issues or have questions about SqlSymphony, please:
 - Open an [issue on GitHub](https://github.com/alexeev-prog/SqlSymphony/issues/new)
 - Reach out to the project maintainers via the [mailing list](mailto:alexeev.dev@mail.ru)
 
+## ☑️ Todos
+ 
+ + Create Migrations system and Migrations Manager
+ + Create ForeignKey field
+
 ## 🔮 Roadmap
 
 Our future goals for SqlSymphony include:
@@ -149,3 +194,5 @@ Our future goals for SqlSymphony include:
 - ✅ Enhancing the testing suite and code coverage
 - 🌍 Translating the documentation to multiple languages
 - 🔧 Implementing advanced querying capabilities
+- 🚀 Add asynchronous operation mode
+- ☑️ Add more fields

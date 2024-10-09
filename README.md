@@ -109,6 +109,65 @@ print(user.objects.fetch())
 
 </details>
 
+<details>
+<summary>Update record</summary>
+
+```python
+user2 = User(name="Carl")
+user2.save()
+
+user2.update(name="Bobby")
+
+print(user.objects.fetch())
+```
+
+</details>
+
+<details>
+<summary>Delete record</summary>
+
+```python
+user = User(name="Charlie")
+user.save()
+
+user2 = User(name="Carl")
+user2.save()
+
+user3 = User(name="John")
+user3.save()
+
+user3.delete() # delete user3
+# OR
+user3.delete(field_name="name", field_value="Carl") # delete user2
+
+print(user.objects.fetch())
+```
+
+</details>
+
+<details>
+<summary>Filter</summary>
+
+```python
+user = User(name="Charlie")
+user.save()
+
+user2 = User(name="Carl")
+user2.save()
+
+user2.update(name="Bobby")
+
+user3 = User(name="John")
+user3.save()
+
+user3.delete()
+
+print(user.objects.fetch())
+print(user.objects.filter(name="Bobby"))
+```
+
+</details>
+
 ## 🤝 Contributing
 
 We welcome contributions from the community! If you'd like to help improve SqlSymphony, please check out the [contributing guidelines](https://github.com/alexeev-prog/SqlSymphony/blob/main/CONTRIBUTING.md) to get started.
@@ -121,6 +180,11 @@ If you encounter any issues or have questions about SqlSymphony, please:
 - Open an [issue on GitHub](https://github.com/alexeev-prog/SqlSymphony/issues/new)
 - Reach out to the project maintainers via the [mailing list](mailto:alexeev.dev@mail.ru)
 
+## ☑️ Todos
+ 
+ + Create Migrations system and Migrations Manager
+ + Create ForeignKey field
+
 ## 🔮 Roadmap
 
 Our future goals for SqlSymphony include:
@@ -130,3 +194,5 @@ Our future goals for SqlSymphony include:
 - ✅ Enhancing the testing suite and code coverage
 - 🌍 Translating the documentation to multiple languages
 - 🔧 Implementing advanced querying capabilities
+- 🚀 Add asynchronous operation mode
+- ☑️ Add more fields
