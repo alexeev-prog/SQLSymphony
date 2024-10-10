@@ -180,6 +180,7 @@ class SQLiteDBManager(DBManager):
 		"""
 		q = str(self.q)
 		db_results = self._connector.fetch(q)
+
 		self.q = (
 			QueryBuilder()
 			.SELECT(*self._model_fields)

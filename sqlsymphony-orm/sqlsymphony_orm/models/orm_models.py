@@ -1,4 +1,6 @@
+from itertools import count
 from typing import Any
+from uuid import uuid4
 from collections import OrderedDict
 
 from rich.console import Console
@@ -8,10 +10,10 @@ from rich import print
 from sqlsymphony_orm.datatypes.fields import BaseDataType, IntegerField
 from sqlsymphony_orm.database.manager import SQLiteDBManager
 
-RESTRICTIED_FIELDS = ['__new__', '__init__', '__str__', '__repr__', 'pk', 'view_table_info',
+RESTRICTIED_FIELDS: list = ['__new__', '__init__', '__str__', '__repr__', 'pk', 'view_table_info',
 						'save', 'update', 'delete', '_get_formatted_sql_fields', 'objects',
 						'_original_fields', '_database_name', '_model_name', '_table_name',
-						'__tablename__', '__database__', 'fields']
+						'__tablename__', '__database__', 'fields', '_unique_id']
 
 
 class MetaModel(type):
@@ -79,6 +81,8 @@ class Model(metaclass=MetaModel):
 	__tablename__ = None
 	__database__ = None
 
+	_ids = count(0)
+
 	def __init__(self, **kwargs):
 		"""
 		Constructs a new instance.
@@ -89,6 +93,8 @@ class Model(metaclass=MetaModel):
 		self.fields = {}
 
 		self.objects.create_table(self._table_name, self._get_formatted_sql_fields())
+
+		self.unique_id = str(uuid4())
 
 		for field_name, field in self._original_fields.items():
 			value = kwargs.get(field_name, None)
@@ -111,7 +117,9 @@ class Model(metaclass=MetaModel):
 
 				if isinstance(field, IntegerField):
 					if field.primary_key:
-						setattr(self, '_primary_key', {'field': field, 'field_name': field_name, 'value': value})
+						setattr(self, '_primary_key', {'field': field, 
+														'field_name': field_name, 
+														'value': next(self._ids) + field.default})
 
 				setattr(self, field_name, field.default)
 				self.fields[field_name] = getattr(self, field_name)
@@ -119,19 +127,9 @@ class Model(metaclass=MetaModel):
 		if not getattr(self, '_primary_key'):
 			raise ValueError('According to database theory, each table should have one PrimaryKey field')
 
-	def _set_next_pk(self):
-		pk = 0
-
-		pk += len(self.objects.fetch())
-
-		setattr(self, self._primary_key['field_name'], pk)
-		self._primary_key['value'] = pk
-
 	@property
 	def pk(self):
-		self._set_next_pk()
-
-		return self._primary_key
+		return self._primary_key['value']
 
 	def view_table_info(self):
 		"""

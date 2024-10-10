@@ -140,8 +140,8 @@ class IntegerField(BaseDataType):
 		if self.primary_key and self.default is not None:
 			self.value = default
 		elif self.primary_key and self.default is None:
-			self.value = 0
-			self.default = 0
+			self.value = 1
+			self.default = 1
 
 	def validate(self, value: Any) -> bool:
 		"""

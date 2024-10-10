@@ -22,6 +22,6 @@ video.save()
 video2 = Video(author='Alexeev', title='Test', description='An another video', views=1)
 video2.save()
 
-print(video.pk, video.author)
+print(video2.pk)
 
 print(video.objects.fetch())
