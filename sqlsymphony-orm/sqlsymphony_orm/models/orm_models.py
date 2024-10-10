@@ -5,8 +5,13 @@ from rich.console import Console
 from rich.table import Table
 from rich import print
 
-from sqlsymphony_orm.datatypes.fields import BaseDataType
+from sqlsymphony_orm.datatypes.fields import BaseDataType, IntegerField
 from sqlsymphony_orm.database.manager import SQLiteDBManager
+
+RESTRICTIED_FIELDS = ['__new__', '__init__', '__str__', '__repr__', 'pk', 'view_table_info',
+						'save', 'update', 'delete', '_get_formatted_sql_fields', 'objects',
+						'_original_fields', '_database_name', '_model_name', '_table_name',
+						'__tablename__', '__database__', 'fields']
 
 
 class MetaModel(type):
@@ -81,12 +86,15 @@ class Model(metaclass=MetaModel):
 		:param		kwargs:	 The keywords arguments
 		:type		kwargs:	 dictionary
 		"""
-		self.objects.create_table(self._table_name, self._get_formatted_sql_fields())
-
 		self.fields = {}
+
+		self.objects.create_table(self._table_name, self._get_formatted_sql_fields())
 
 		for field_name, field in self._original_fields.items():
 			value = kwargs.get(field_name, None)
+
+			if field_name in RESTRICTIED_FIELDS:
+				raise ValueError(f'The field named {field_name} is prohibited to avoid naming errors. Please try a different name. List of restricted names: {RESTRICTIED_FIELDS}')
 
 			if not kwargs.get("manager", False):
 				if not field.null and value is None and field.default is None:
@@ -101,9 +109,29 @@ class Model(metaclass=MetaModel):
 				if value is not None and not field.validate(value):
 					raise ValueError(f'Validation error: field {field}; field name "{field_name}"; value "{value}"')
 
+				if isinstance(field, IntegerField):
+					if field.primary_key:
+						setattr(self, '_primary_key', {'field': field, 'field_name': field_name, 'value': value})
+
 				setattr(self, field_name, field.default)
 				self.fields[field_name] = getattr(self, field_name)
 
+		if not getattr(self, '_primary_key'):
+			raise ValueError('According to database theory, each table should have one PrimaryKey field')
+
+	def _set_next_pk(self):
+		pk = 0
+
+		pk += len(self.objects.fetch())
+
+		setattr(self, self._primary_key['field_name'], pk)
+		self._primary_key['value'] = pk
+
+	@property
+	def pk(self):
+		self._set_next_pk()
+
+		return self._primary_key
 
 	def view_table_info(self):
 		"""

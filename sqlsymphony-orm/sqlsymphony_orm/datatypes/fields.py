@@ -141,6 +141,7 @@ class IntegerField(BaseDataType):
 			self.value = default
 		elif self.primary_key and self.default is None:
 			self.value = 0
+			self.default = 0
 
 	def validate(self, value: Any) -> bool:
 		"""

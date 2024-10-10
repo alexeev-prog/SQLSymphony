@@ -17,8 +17,11 @@ class Video(Model):
 
 
 video = Video(author='Alexeev', title='How to make your own ORM in python', description='Big video about python coding')
-video.update(views=100)
-print(video.views)
 video.save()
+
+video2 = Video(author='Alexeev', title='Test', description='An another video', views=1)
+video2.save()
+
+print(video.pk, video.author)
 
 print(video.objects.fetch())
