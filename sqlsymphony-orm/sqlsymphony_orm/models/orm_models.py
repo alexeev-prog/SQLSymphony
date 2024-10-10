@@ -10,10 +10,27 @@ from rich import print
 from sqlsymphony_orm.datatypes.fields import BaseDataType, IntegerField
 from sqlsymphony_orm.database.manager import SQLiteDBManager
 
-RESTRICTIED_FIELDS: list = ['__new__', '__init__', '__str__', '__repr__', 'pk', 'view_table_info',
-						'save', 'update', 'delete', '_get_formatted_sql_fields', 'objects',
-						'_original_fields', '_database_name', '_model_name', '_table_name',
-						'__tablename__', '__database__', 'fields', '_unique_id']
+RESTRICTIED_FIELDS: list = [
+	"__new__",
+	"__init__",
+	"__str__",
+	"__repr__",
+	"pk",
+	"view_table_info",
+	"save",
+	"update",
+	"delete",
+	"_get_formatted_sql_fields",
+	"objects",
+	"_original_fields",
+	"_database_name",
+	"_model_name",
+	"_table_name",
+	"__tablename__",
+	"__database__",
+	"fields",
+	"_unique_id",
+]
 
 
 class MetaModel(type):
@@ -100,7 +117,9 @@ class Model(metaclass=MetaModel):
 			value = kwargs.get(field_name, None)
 
 			if field_name in RESTRICTIED_FIELDS:
-				raise ValueError(f'The field named {field_name} is prohibited to avoid naming errors. Please try a different name. List of restricted names: {RESTRICTIED_FIELDS}')
+				raise ValueError(
+					f"The field named {field_name} is prohibited to avoid naming errors. Please try a different name. List of restricted names: {RESTRICTIED_FIELDS}"
+				)
 
 			if not kwargs.get("manager", False):
 				if not field.null and value is None and field.default is None:
@@ -113,23 +132,33 @@ class Model(metaclass=MetaModel):
 				self.fields[field_name] = getattr(self, field_name)
 			else:
 				if value is not None and not field.validate(value):
-					raise ValueError(f'Validation error: field {field}; field name "{field_name}"; value "{value}"')
+					raise ValueError(
+						f'Validation error: field {field}; field name "{field_name}"; value "{value}"'
+					)
 
 				if isinstance(field, IntegerField):
 					if field.primary_key:
-						setattr(self, '_primary_key', {'field': field, 
-														'field_name': field_name, 
-														'value': next(self._ids) + field.default})
+						setattr(
+							self,
+							"_primary_key",
+							{
+								"field": field,
+								"field_name": field_name,
+								"value": next(self._ids) + field.default,
+							},
+						)
 
 				setattr(self, field_name, field.default)
 				self.fields[field_name] = getattr(self, field_name)
 
-		if not getattr(self, '_primary_key'):
-			raise ValueError('According to database theory, each table should have one PrimaryKey field')
+		if not getattr(self, "_primary_key"):
+			raise ValueError(
+				"According to database theory, each table should have one PrimaryKey field"
+			)
 
 	@property
 	def pk(self):
-		return self._primary_key['value']
+		return self._primary_key["value"]
 
 	def view_table_info(self):
 		"""
@@ -202,20 +231,7 @@ class Model(metaclass=MetaModel):
 			self.objects.delete(self._table_name, field_name, field_value)
 			return
 
-		attr = None
-		value = None
-		name = None
-
-		for key in self._original_fields.keys():
-			attr = getattr(self, key)
-
-			if attr is not None:
-				value = attr
-				name = key
-				break
-
-		if attr is not None and value is not None and name is not None:
-			self.objects.delete(self._table_name, name, value)
+		self.objects.delete(self._table_name, self._primary_key["field_name"], self.pk)
 
 	def _get_formatted_sql_fields(self) -> dict:
 		"""

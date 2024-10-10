@@ -15,36 +15,36 @@ class CacheBase(object):
 	def get(self, key: str) -> Any:
 		"""
 		Retrieve a value from the cache.
-		
+
 		Args: key (str): The key to retrieve.
-		
+
 		Returns: Any: The cached value, or None if the key is not found.
-		
-		:param      key:  The key
-		:type       key:  str
-		
-		:returns:   { description_of_the_return_value }
-		:rtype:     Any
+
+		:param		key:  The key
+		:type		key:  str
+
+		:returns:	{ description_of_the_return_value }
+		:rtype:		Any
 		"""
 		raise NotImplementedError
 
 	def set(self, key: str, value: Any, timestamp: float) -> None:
 		"""
 		Store a value in the cache.
-		
+
 		Args: key (str): The key to store the value under. value (Any): The
 		value to store. timestamp (float): The timestamp when the value was
 		generated.
-		
-		:param      key:        The new value
-		:type       key:        str
-		:param      value:      The value
-		:type       value:      Any
-		:param      timestamp:  The timestamp
-		:type       timestamp:  float
-		
-		:returns:   { description_of_the_return_value }
-		:rtype:     None
+
+		:param		key:		The new value
+		:type		key:		str
+		:param		value:		The value
+		:type		value:		Any
+		:param		timestamp:	The timestamp
+		:type		timestamp:	float
+
+		:returns:	{ description_of_the_return_value }
+		:rtype:		None
 		"""
 		raise NotImplementedError
 
@@ -104,22 +104,22 @@ class CacheFactory(object):
 	def create_cache(cache_type: Type[CacheBase], *args, **kwargs) -> CacheBase:
 		"""
 		Create a new cache instance of the specified type.
-		
+
 		Args: cache_type (Type[CacheBase]): The type of cache to create. *args:
 		Positional arguments to pass to the cache constructor. **kwargs: Keyword
 		arguments to pass to the cache constructor.
-		
+
 		Returns: CacheBase: A new instance of the specified cache type.
-		
-		:param      cache_type:  The cache type
-		:type       cache_type:  { type_description }
-		:param      args:        The arguments
-		:type       args:        list
-		:param      kwargs:      The keywords arguments
-		:type       kwargs:      dictionary
-		
-		:returns:   The cache base.
-		:rtype:     CacheBase
+
+		:param		cache_type:	 The cache type
+		:type		cache_type:	 { type_description }
+		:param		args:		 The arguments
+		:type		args:		 list
+		:param		kwargs:		 The keywords arguments
+		:type		kwargs:		 dictionary
+
+		:returns:	The cache base.
+		:rtype:		CacheBase
 		"""
 		return cache_type(*args, **kwargs)
 
@@ -154,27 +154,27 @@ def cached(
 ) -> Callable:
 	"""
 	A decorator that caches the results of a function or method.
-	
+
 	This decorator uses the provided cache instance to store and retrieve the
 	results of the decorated function or method. The key_func argument allows
 	you to customize how the cache key is generated from the function/method
 	arguments.
-	
+
 	Args: cache (SingletonCache): The cache instance to use for caching.
 	key_func (Callable[[Any, Any], str]): A function that generates the cache
 	key from the function/method arguments.
-	
+
 	Returns: Callable: A new function or method that caches the results.
-	
-	:param      cache:     The cache
-	:type       cache:     SingletonCache
-	:param      key_func:  The key function
-	:type       key_func:  (Callable[[Any, Any], str])
-	:param      kwargs:    The keywords arguments
-	:type       kwargs:    dictionary
-	
-	:returns:   decorator
-	:rtype:     Callable
+
+	:param		cache:	   The cache
+	:type		cache:	   SingletonCache
+	:param		key_func:  The key function
+	:type		key_func:  (Callable[[Any, Any], str])
+	:param		kwargs:	   The keywords arguments
+	:type		kwargs:	   dictionary
+
+	:returns:	decorator
+	:rtype:		Callable
 	"""
 
 	def decorator(func: Callable) -> Callable:

@@ -16,12 +16,17 @@ class Video(Model):
 		return f"<Video {self.id} {self.title}>"
 
 
-video = Video(author='Alexeev', title='How to make your own ORM in python', description='Big video about python coding')
+video = Video(
+	author="Alexeev",
+	title="How to make your own ORM in python",
+	description="Big video about python coding",
+)
 video.save()
 
-video2 = Video(author='Alexeev', title='Test', description='An another video', views=1)
+video2 = Video(author="Alexeev", title="Test", description="An another video", views=1)
 video2.save()
 
-print(video2.pk)
+print(video.pk)
+video2.delete()
 
 print(video.objects.fetch())
