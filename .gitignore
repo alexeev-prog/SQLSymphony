@@ -163,3 +163,7 @@ cython_debug/
 
 sqlsymphony-orm/dist/
 sqlsymphony-orm/*.db
+sqlsymphony-orm/*.lock
+sqlsymphony-orm/format-code.py
+sqlsymphony-orm/main.py
+sqlsymphony-orm/spacetabs.sh

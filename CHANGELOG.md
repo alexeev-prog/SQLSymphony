@@ -1,3 +1,9 @@
+commit c50edfcf676685c44f374373f69d9d0349f736d3
+Author: alexeev-prog <alexeev.dev@mail.ru>
+Date:   Sat Oct 12 23:51:04 2024 +0700
+
+    docs: add changelog and version tag
+
 commit 8d03b8053b4da809cdd22f43c7576162ecba1c6d
 Author: alexeev-prog <alexeev.dev@mail.ru>
 Date:   Sat Oct 12 23:50:20 2024 +0700

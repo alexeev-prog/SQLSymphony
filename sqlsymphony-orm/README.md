@@ -21,7 +21,7 @@
     ·
     <a href="https://alexeev-prog.github.io/SQLSymphony/">Documentation</a>
     ·
-    <a href="https://github.com/alexeev-prog/SQLSymphony/blob/master/LICENSE">License</a>
+    <a href="https://github.com/alexeev-prog/SQLSymphony/blob/main/LICENSE">License</a>
   </p>
 </div>
 <br>
@@ -348,6 +348,6 @@ Our future goals for SqlSymphony include:
 
 ## License
 
-Distributed under the GNU GPL v3 License. See [LICENSE](https://github.com/alexeev-prog/SQLSymphony/blob/master/LICENSE) for more information.
+Distributed under the GNU GPL v3 License. See [LICENSE](https://github.com/alexeev-prog/SQLSymphony/blob/main/LICENSE) for more information.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
