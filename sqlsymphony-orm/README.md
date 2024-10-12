@@ -2,7 +2,7 @@
 # SQLSymphony
 <a id="readme-top"></a> 
 
-<div align="center">
+<div align="center">  
   <p align="center">
     SQLSymphony: The elegant and powerful SQLite3 ORM for Python
     <br />
