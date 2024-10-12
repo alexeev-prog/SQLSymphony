@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from rich.console import Console
 from rich.table import Table
+from loguru import logger
 from sqlsymphony_orm.performance.cache import cached, SingletonCache, InMemoryCache
 
 AND = "and"
@@ -72,7 +73,7 @@ class BaseExp(ABC):
 		:returns:	sql query
 		:rtype:		str
 		"""
-		return self.name + "\n\t" + self.line() + "\n"
+		return self.name + " " + self.line() + " "
 
 	@abstractmethod
 	def line(self):
@@ -348,7 +349,7 @@ def raw_sql_query(connector: "DBConnector" = None, values: tuple = ()):
 			if connector is None:
 				print(query)
 			else:
-				print(f"EXEC QUERY: {query}")
+				logger.info(f"Execute raw SQL query: {query} ({values})")
 				connector.fetch(query, values)
 
 			return query

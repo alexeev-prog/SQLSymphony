@@ -1,12 +1,93 @@
 from abc import ABC, abstractmethod
 from typing import Any
+from loguru import logger
 
 from sqlsymphony_orm.queries import QueryBuilder
 from sqlsymphony_orm.database.connection import DBConnector, SQLiteDBConnector
 from sqlsymphony_orm.performance.cache import cached, SingletonCache, InMemoryCache
 
 
-class DBManager(ABC):
+class DatabaseSession(ABC):
+	"""
+	This class describes a database session.
+	"""
+
+	def __init__(self, connector: DBConnector):
+		"""
+		Constructs a new instance.
+
+		:param      connector:  The connector
+		:type       connector:  DBConnector
+		"""
+		self.connector = connector
+
+	@abstractmethod
+	def __enter__(self):
+		"""
+		Enter to context manager
+
+		:returns:   database connector
+		:rtype:     DBConnector
+		"""
+		self.logger.debug("Start DatabaseSession")
+		return self.connector
+
+	@abstractmethod
+	def __exit__(self):
+		"""
+		Exit from context manager
+		"""
+		self.logger.debug("Stop DatabaseSession")
+		self.connector.close_connection()
+
+
+class SQLiteDatabaseSession(DatabaseSession):
+	"""
+	This class describes a sqlite database session.
+	"""
+
+	def __init__(self, connector: SQLiteDBConnector, commit: bool = False):
+		"""
+		Constructs a new instance.
+
+		:param      connector:  The connector
+		:type       connector:  SQLiteDBConnector
+		:param      commit:     The commit
+		:type       commit:     bool
+		"""
+		self.connector = connector
+		self.commit = commit
+
+	def __enter__(self):
+		"""
+		Enter to context manager
+
+		:returns:   connector
+		:rtype:     SQLiteDBConnector
+		"""
+		logger.info("Create SQLiteDatabaseSession")
+		return self.connector
+
+	def __exit__(self, type, value, traceback):
+		"""
+		Exit from context manager
+
+		:param      type:       The type
+		:param      value:      The value
+		:param      traceback:  The traceback
+		"""
+		if self.commit:
+			logger.debug("Commit changes...")
+
+			try:
+				self.connector.commit()
+			except Exception as ex:
+				logger.error(f"Error commit changes: {ex}")
+
+		self.connector.close_connection()
+
+
+class ModelManager(ABC):
 	"""
 	This class describes a db manager.
 	"""
@@ -50,7 +131,7 @@ class DBManager(ABC):
 		raise NotImplementedError()
 
 
-class SQLiteDBManager(DBManager):
+class SQLiteModelManager(ModelManager):
 	"""
 	This class describes a sq lite db manager.
 	"""
@@ -75,7 +156,14 @@ class SQLiteDBManager(DBManager):
 		if model_class._table_name != "model":
 			self._connector.connect(database_name)
 
-	def insert(self, table_name: str, columns: str, count: str, values: tuple):
+	def insert(
+		self,
+		table_name: str,
+		columns: str,
+		count: str,
+		values: tuple,
+		ignore: bool = False,
+	):
 		"""
 		Insert a fields to database
 
@@ -88,10 +176,14 @@ class SQLiteDBManager(DBManager):
 		:param		values:		 The values
 		:type		values:		 tuple
 		"""
-		query = f"INSERT OR IGNORE INTO {table_name} ({columns}) VALUES ({count})"
+		query = "INSERT "
+
+		if ignore:
+			query += "OR IGNORE "
+
+		query += f"INTO {table_name} ({columns}) VALUES ({count})"
 
 		self._connector.fetch(query, values)
-		self._connector.commit()
 
 	def update(self, table_name: str, key: str, orig_field: str, new_value: str):
 		"""
@@ -109,7 +201,6 @@ class SQLiteDBManager(DBManager):
 		query = f"UPDATE {table_name} SET {key} = ? WHERE {key} = ?"
 
 		self._connector.fetch(query, (new_value, orig_field))
-		self._connector.commit()
 
 	@cached(SingletonCache(InMemoryCache, max_size=1000, ttl=60))
 	def filter(self, *args, **kwargs) -> list:
@@ -127,7 +218,7 @@ class SQLiteDBManager(DBManager):
 		self.q = self.q.WHERE(*args, **kwargs)
 		return self.fetch()
 
-	def commit_changes(self):
+	def commit(self):
 		"""
 		Commits changes.
 		"""
@@ -152,7 +243,10 @@ class SQLiteDBManager(DBManager):
 		query = query[:-1]
 		query += ")"
 
+		logger.info(f"Create new table: {table_name}")
+
 		self._connector.fetch(query)
+		self._connector.commit()
 
 	def delete(self, table_name: str, field_name: str, field_value: Any):
 		"""
@@ -168,7 +262,6 @@ class SQLiteDBManager(DBManager):
 		query = f"DELETE FROM {table_name} WHERE {field_name} = ?"
 
 		self._connector.fetch(query, (field_value,))
-		self._connector.commit()
 
 	@cached(SingletonCache(InMemoryCache, max_size=1000, ttl=60))
 	def fetch(self) -> list:

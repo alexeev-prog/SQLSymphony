@@ -1,9 +1,15 @@
 from abc import ABC, abstractmethod
+from enum import Enum
 from dataclasses import dataclass
 from typing import Any
 
 from rich.console import Console
 from rich.table import Table
+
+
+class ForeignFieldMods(Enum):
+	CASCADE = "CASCADE"
+	RESTRICT = "RESTRICT"
 
 
 class BaseDataType(ABC):
@@ -108,7 +114,6 @@ class IntegerField(BaseDataType):
 
 	def __init__(
 		self,
-		auto_increment: bool = False,
 		max_value: int = None,
 		min_value: int = None,
 		primary_key: bool = False,
@@ -132,16 +137,16 @@ class IntegerField(BaseDataType):
 		self.unique: bool = unique
 		self.null: bool = null
 		self.default: int = default
-		self.auto_increment: bool = auto_increment
 
 		self.min_value = min_value
 		self.max_value = max_value
 
-		if self.primary_key and self.default is not None:
-			self.value = default
-		elif self.primary_key and self.default is None:
-			self.value = 1
+		if self.primary_key:
+			if self.default:
+				raise ValueError('The parameter "default" is not used for PrimaryKey')
+
 			self.default = 1
+			self.value = 1
 
 	def validate(self, value: Any) -> bool:
 		"""
@@ -153,7 +158,7 @@ class IntegerField(BaseDataType):
 		:returns:	if the value is verified then True, otherwise False
 		:rtype:		bool
 		"""
-		if self.primary_key and self.auto_increment and value is None:
+		if self.primary_key and value is None:
 			return True
 		if value is None and self.null:
 			return True
@@ -174,7 +179,7 @@ class IntegerField(BaseDataType):
 		:returns:	db value
 		:rtype:		int
 		"""
-		if self.primary_key and self.auto_increment and value is None:
+		if self.primary_key and value is None:
 			return 0
 
 		return int(value) if value is not None else self.default

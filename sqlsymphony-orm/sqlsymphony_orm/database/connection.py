@@ -2,9 +2,11 @@ import sqlite3
 from abc import ABC, abstractmethod
 from typing import Tuple
 
-from rich.console import Console
-from rich.table import Table
 from rich import print
+
+from loguru import logger
+
+from sqlsymphony_orm.exceptions import UniqueConstraintError
 
 
 class DBConnector(ABC):
@@ -95,6 +97,7 @@ class SQLiteDBConnector(DBConnector):
 		"""
 		self._connection.close()
 		print("[bold]Connection has been closed[/bold]")
+		logger.info("Close Database Connection")
 
 	def connect(self, database_name: str = "database.db"):
 		"""
@@ -103,12 +106,19 @@ class SQLiteDBConnector(DBConnector):
 		:param		database_name:	The database name
 		:type		database_name:	str
 		"""
+		pragmas = ["PRAGMA foreign_keys = 1"]
 		self._connection = sqlite3.connect(database_name)
+		logger.info(f"[{database_name}] Connect database...")
+
+		for pragma in pragmas:
+			self._connection.execute(pragma)
+			logger.debug(f"Set pragma: {pragma}")
 
 	def commit(self):
 		"""
 		Commit changes to database
 		"""
+		logger.info("Commit changes to database")
 		self._connection.commit()
 
 	def fetch(self, query: str, values: Tuple = ()) -> list:
@@ -124,31 +134,21 @@ class SQLiteDBConnector(DBConnector):
 		:rtype:		list
 		"""
 		cursor = self._connection.cursor()
+		self.commit()
+
+		logger.debug(f"Fetch query: {query} {values}")
 
 		try:
 			cursor.execute(query, values)
 		except sqlite3.IntegrityError as ex:
 			try:
 				if str(ex).split(":")[0] == "UNIQUE constraint failed":
-					table = Table(title="SQL Error: UNIQUE", title_style="bold red")
-
-					table.add_column("Error Type", style="red")
-					table.add_column("Full info", style="red")
-					table.add_column("Short explain", style="yellow")
-					table.add_column("SQL Query", style="green")
-
-					table.add_row(
-						"IntegrityError",
-						str(ex),
-						"Problem with UNIQUE fields in a table",
-						f"{query} {values}",
-					)
-
-					console = Console()
-					console.print(table)
-
-					raise ex
+					raise UniqueConstraintError("Problems with UNIQUE field")
 			except KeyError:
+				logger.error(f"An exception occurred while executing the request: {ex}")
 				raise ex
+		except Exception as ex:
+			logger.error(f"An exception occurred while executing the request: {ex}")
+			raise ex
 
 		return cursor.fetchall()

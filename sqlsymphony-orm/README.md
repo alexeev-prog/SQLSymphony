@@ -1,7 +1,29 @@
 @mainpage
 # SQLSymphony
+<a id="readme-top"></a> 
 
-<p align="center">A simple and powerful ORM library in Python</p>
+<div align="center">
+  <p align="center">
+    SQLSymphony: The elegant and powerful SQLite3 ORM for Python
+    <br />
+    <a href="https://alexeev-prog.github.io/SQLSymphony/"><strong>Explore the docs »</strong></a>
+    <br />
+    <br />
+    <a href="#-comparison-with-alternatives">Comparison with Alternatives</a>
+    .
+    <a href="#-why-choose-sqlsymphony">Why Choose SQLSymphony</a>
+    ·
+    <a href="#-key-features">Key Features</a>
+    ·
+    <a href="#-getting-started">Getting Started</a>
+    ·
+    <a href="#-usage-examples">Basic Usage</a>
+    ·
+    <a href="https://alexeev-prog.github.io/SQLSymphony/">Documentation</a>
+    ·
+    <a href="https://github.com/alexeev-prog/SQLSymphony/blob/master/LICENSE">License</a>
+  </p>
+</div>
 <br>
 <p align="center">
 	<img src="https://img.shields.io/github/languages/top/alexeev-prog/SQLSymphony?style=for-the-badge">
@@ -22,12 +44,15 @@ SQLSymphony is a **lightweight** ✨, **powerful** 💪, and **high-performance*
 
 | Feature                          | SqlSymphony  | SQLAlchemy | Peewee  |
 | -------------------------------- | ------------ | ---------- | ------- |
-| 💫 Simplicity                    | ✔️          | ✔️         | ❌      |
+| 💫 Simplicity                    | ✔️          | ✔️         | ✔️      |
 | 🚀 Performance                   | ✔️          | ❌         | ✔️      |
 | 🌐 Database Agnosticism          | ❌          | ✔️         | ❌      |
 | 📚 Comprehensive Documentation   | ✔️          | ✔️         | ✔️      |
 | 🔥 Active Development            | ✔️          | ✔️         | ❌      |
-| ⚡️ ASYNC Support                 | COMING SOON | ❌         | ❌      |
+| 💻 Audit changes & reverts       | ✔️          | ❌         | ❌      |
+| ⚡ ASYNC Support                 | COMING SOON | ✔️         | ❌      |
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## 🤔 Why Choose SqlSymphony?
 
@@ -43,6 +68,8 @@ SQLSymphony is a **lightweight** ✨, **powerful** 💪, and **high-performance*
 
 🧪 Extensive Test Coverage: SqlSymphony is backed by a comprehensive test suite, ensuring the library's reliability and stability.
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ## 📚 Key Features
 
 - Intuitive API: Pythonic, object-oriented interface for interacting with SQLite3 databases.
@@ -52,9 +79,11 @@ SQLSymphony is a **lightweight** ✨, **powerful** 💪, and **high-performance*
 - Modular Design: Clean, maintainable codebase that follows best software engineering practices.
 - Extensive Test Coverage: Robust test suite to ensure the library's reliability and stability.
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ## 🚀 Getting Started
 
-To install SqlSymphony, use pip:
+SQLSymphony is available on [PyPI](https://pypi.org/project/sqlsymphony_orm). Simply install the package into your project environment with PIP:
 
 ```bash
 pip install sqlsymphony_orm
@@ -62,55 +91,75 @@ pip install sqlsymphony_orm
 
 Once installed, you can start using the library in your Python projects. Check out the [documentation](https://alexeev-prog.github.io/SQLSymphony) for detailed usage examples and API reference.
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ## 💻 Usage Examples
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ### Creating a Model
 
 ```python
-from sqlsymphony_orm.datatypes.fields import IntegerField, CharField
+from sqlsymphony_orm.datatypes.fields import IntegerField, CharField, TextField
 from sqlsymphony_orm.models.orm_models import Model
-from sqlsymphony_orm.queries import raw_sql_query
+from sqlsymphony_orm.database.manager import SQLiteDatabaseSession
 from sqlsymphony_orm.database.connection import SQLiteDBConnector
 
 
-class User(Model):
-    __tablename__ = "Users"
-    __database__ = "users.db"
+class Video(Model):
+	__tablename__ = "Videos"
+	__database__ = "videos.db"
 
-    id = IntegerField(primary_key=True)
-    name = CharField(max_length=32, unique=True, null=False)
+	id = IntegerField(primary_key=True)
+	author = CharField(max_length=32)
+	title = CharField(max_length=64, null=False)
+	description = TextField(null=False)
+	views = IntegerField(null=False, default=0)
 
-    def __repr__(self):
-        return f"<User {self.id} {self.name}>"
-
-connector = SQLiteDBConnector().connect()
-
-
-@raw_sql_query(connector=connector)
-def create_table(name: str):
-    return 'CREATE TABLE IF NOT EXISTS %s (id INTEGER, name TEXT NOT NULL)' % (name,)
+	def __repr__(self):
+		return f"<Video {self.id} {self.title}>"
 
 
-create_table('Memo')
+class Comment(Model):
+	__tablename__ = "Comments"
+	__database__ = "videos.db"
+
+	id = IntegerField(primary_key=True)
+	video = IntegerField(null=False)
+
+	def __repr__(self):
+		return f"<Comment {self.id} {self.video}>"
 
 
-user = User(name="Charlie")
-user.save()
+# Simple hook
+def hello():
+	print("hello")
 
-user2 = User(name="Carl")
-user2.save()
 
-user2.update(name="Bobby")
+video = Video(
+	author="Alexeev",
+	title="How to make your own ORM in python",
+	description="Big video about python coding",
+)
+video.save(ignore=True)
+video.commit()
 
-user3 = User(name="John")
-user3.save()
+video2 = Video(author="Alexeev", title="Test", description="An another video", views=1)
+video2.save(ignore=True)
+video2.commit()
+video2.update(views=102)
+video2.delete()
+video2.commit()
+video2.rollback_last_action()
+video2.commit()
 
-user3.delete()
+comment = Comment(video=video2.pk)
+comment.add_hook("save", hello) # register hook (exec before sql query exec)
+comment.save(ignore=True)
+comment.commit()
 
-print(user.objects.fetch())
-print(user.objects.filter(name="Bobby"))
-
-user.view_table_info()
+print(video.objects.fetch())
+print(comment.objects.fetch())
+print(video2.get_audit_history())
 ```
 
 <details>
@@ -152,6 +201,21 @@ def insert():
 
 </details>
 
+<details>
+<summary>Session SQL Query Executor</summary>
+
+```python
+from sqlsymphony_orm.database.manager import SQLiteDatabaseSession
+from sqlsymphony_orm.database.connection import SQLiteDBConnector
+
+with SQLiteDatabaseSession(connector, commit=True) as session:
+	session.fetch(
+		"CREATE TABLE IF NOT EXISTS BALABOLA (id INTEGER PRIMARY KEY, name VarChar(32))"
+	)
+```	
+
+</details>
+
 ### Performing CRUD Operations
 
 <details>
@@ -160,9 +224,11 @@ def insert():
 ```python
 user = User(name='Charlie')
 user.save()
+user.commit()
 
 user2 = User(name='John')
 user2.save()
+user2.commit()
 
 print(user.objects.fetch())
 ```
@@ -175,10 +241,12 @@ print(user.objects.fetch())
 ```python
 user2 = User(name="Carl")
 user2.save()
+user2.commit()
 
 user2.update(name="Bobby")
+user2.commit()
 
-print(user.objects.fetch())
+print(user2.objects.fetch())
 ```
 
 </details>
@@ -189,16 +257,21 @@ print(user.objects.fetch())
 ```python
 user = User(name="Charlie")
 user.save()
+user.commit()
 
 user2 = User(name="Carl")
 user2.save()
+user2.commit()
 
 user3 = User(name="John")
 user3.save()
+user3.commit()
 
 user3.delete() # delete user3
 # OR
 user3.delete(field_name="name", field_value="Carl") # delete user2
+
+user3.commit()
 
 print(user.objects.fetch())
 ```
@@ -211,16 +284,21 @@ print(user.objects.fetch())
 ```python
 user = User(name="Charlie")
 user.save()
+user.commit()
 
 user2 = User(name="Carl")
 user2.save()
+user2.commit()
 
 user2.update(name="Bobby")
+user2.commit()
 
 user3 = User(name="John")
 user3.save()
+user3.commit()
 
 user3.delete()
+user3.commit()
 
 print(user.objects.fetch())
 print(user.objects.filter(name="Bobby"))
@@ -228,9 +306,13 @@ print(user.objects.filter(name="Bobby"))
 
 </details>
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ## 🤝 Contributing
 
 We welcome contributions from the community! If you'd like to help improve SqlSymphony, please check out the [contributing guidelines](https://github.com/alexeev-prog/SqlSymphony/blob/main/CONTRIBUTING.md) to get started.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## 💬 Support
 
@@ -240,10 +322,15 @@ If you encounter any issues or have questions about SqlSymphony, please:
 - Open an [issue on GitHub](https://github.com/alexeev-prog/SQLSymphony/issues/new)
 - Reach out to the project maintainers via the [mailing list](mailto:alexeev.dev@mail.ru)
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ## ☑️ Todos
  
  + Create Migrations system and Migrations Manager
  + Create ForeignKey field
+ + Create RelationShip
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## 🔮 Roadmap
 
@@ -256,3 +343,11 @@ Our future goals for SqlSymphony include:
 - 🔧 Implementing advanced querying capabilities
 - 🚀 Add asynchronous operation mode
 - ☑️ Add more fields
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## License
+
+Distributed under the GNU GPL v3 License. See [LICENSE](https://github.com/alexeev-prog/SQLSymphony/blob/master/LICENSE) for more information.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>

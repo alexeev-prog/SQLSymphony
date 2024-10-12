@@ -65,12 +65,29 @@ class InMemoryCache(CacheBase):
 	"""
 
 	def __init__(self, max_size: int = 1000, ttl: int = 60) -> None:
+		"""
+		Constructs a new instance.
+
+		:param      max_size:  The maximum size
+		:type       max_size:  int
+		:param      ttl:       The ttl
+		:type       ttl:       int
+		"""
 		self.max_size = max_size
 		self.ttl = ttl
 		self.cache = {}
 		self.timestamps = {}
 
 	def get(self, key: str) -> Any:
+		"""
+		Gets the specified key.
+
+		:param      key:  The key
+		:type       key:  str
+
+		:returns:   Any value
+		:rtype:     Any
+		"""
 		if key in self.cache:
 			if time.time() - self.timestamps[key] <= self.ttl:
 				return self.cache[key]
@@ -80,6 +97,16 @@ class InMemoryCache(CacheBase):
 		return None
 
 	def set(self, key: str, value: Any, timestamp: float) -> None:
+		"""
+		Set new cache element
+
+		:param      key:        The new value
+		:type       key:        str
+		:param      value:      The value
+		:type       value:      Any
+		:param      timestamp:  The timestamp
+		:type       timestamp:  float
+		"""
 		if len(self.cache) >= self.max_size:
 			oldest_key = min(self.timestamps, key=self.timestamps.get)
 			del self.cache[oldest_key]
@@ -88,6 +115,9 @@ class InMemoryCache(CacheBase):
 		self.timestamps[key] = timestamp
 
 	def clear(self) -> None:
+		"""
+		Clears the cache
+		"""
 		self.cache.clear()
 		self.timestamps.clear()
 
@@ -135,15 +165,47 @@ class SingletonCache(CacheBase, metaclass=Singleton):
 	"""
 
 	def __init__(self, cache_type: Type[CacheBase], *args, **kwargs) -> None:
+		"""
+		Constructs a new instance.
+
+		:param      cache_type:  The cache type
+		:type       cache_type:  Type[CacheBase]
+		:param      args:        The arguments
+		:type       args:        list
+		:param      kwargs:      The keywords arguments
+		:type       kwargs:      dictionary
+		"""
 		self.cache = CacheFactory.create_cache(cache_type, *args, **kwargs)
 
 	def get(self, key: str) -> Any:
+		"""
+		Gets the specified key.
+
+		:param      key:  The key
+		:type       key:  str
+
+		:returns:   Any value
+		:rtype:     Any
+		"""
 		return self.cache.get(key)
 
 	def set(self, key: str, value: Any, timestamp: float) -> None:
+		"""
+		Set new cache element
+
+		:param      key:        The new value
+		:type       key:        str
+		:param      value:      The value
+		:type       value:      Any
+		:param      timestamp:  The timestamp
+		:type       timestamp:  float
+		"""
 		self.cache.set(key, value, timestamp)
 
 	def clear(self) -> None:
+		"""
+		Clear cache
+		"""
 		self.cache.clear()
 
 

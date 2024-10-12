@@ -1,14 +1,27 @@
-from itertools import count
-from typing import Any
+from typing import Any, Callable
 from uuid import uuid4
 from collections import OrderedDict
+from datetime import datetime
 
 from rich.console import Console
 from rich.table import Table
 from rich import print
 
+from loguru import logger
+
 from sqlsymphony_orm.datatypes.fields import BaseDataType, IntegerField
-from sqlsymphony_orm.database.manager import SQLiteDBManager
+from sqlsymphony_orm.database.manager import SQLiteModelManager
+from sqlsymphony_orm.exceptions import (
+	PrimaryKeyError,
+	FieldValidationError,
+	NullableFieldError,
+	FieldNamingError,
+)
+from sqlsymphony_orm.utils.auditing import (
+	AuditManager,
+	InMemoryAuditStorage,
+	BasicChangeObserver,
+)
 
 RESTRICTIED_FIELDS: list = [
 	"__new__",
@@ -84,7 +97,9 @@ class MetaModel(type):
 		setattr(new_class, "_original_fields", fields)
 
 		setattr(
-			new_class, "objects", SQLiteDBManager(new_class, new_class._database_name)
+			new_class,
+			"objects",
+			SQLiteModelManager(new_class, new_class._database_name),
 		)
 
 		return new_class
@@ -97,8 +112,7 @@ class Model(metaclass=MetaModel):
 
 	__tablename__ = None
 	__database__ = None
-
-	_ids = count(0)
+	_ids = 0
 
 	def __init__(self, **kwargs):
 		"""
@@ -108,6 +122,9 @@ class Model(metaclass=MetaModel):
 		:type		kwargs:	 dictionary
 		"""
 		self.fields = {}
+		self.hooks = {}
+		self.audit_manager = AuditManager(InMemoryAuditStorage())
+		self.audit_manager.attach(BasicChangeObserver())
 
 		self.objects.create_table(self._table_name, self._get_formatted_sql_fields())
 
@@ -117,13 +134,13 @@ class Model(metaclass=MetaModel):
 			value = kwargs.get(field_name, None)
 
 			if field_name in RESTRICTIED_FIELDS:
-				raise ValueError(
+				raise FieldNamingError(
 					f"The field named {field_name} is prohibited to avoid naming errors. Please try a different name. List of restricted names: {RESTRICTIED_FIELDS}"
 				)
 
 			if not kwargs.get("manager", False):
 				if not field.null and value is None and field.default is None:
-					raise ValueError(
+					raise NullableFieldError(
 						f"Field {field_name} is set to NOT NULL, but it is empty"
 					)
 
@@ -132,19 +149,20 @@ class Model(metaclass=MetaModel):
 				self.fields[field_name] = getattr(self, field_name)
 			else:
 				if value is not None and not field.validate(value):
-					raise ValueError(
-						f'Validation error: field {field}; field name "{field_name}"; value "{value}"'
+					raise FieldValidationError(
+						f'Validate error: field {field}; field name "{field_name}"; value "{value}"'
 					)
 
 				if isinstance(field, IntegerField):
 					if field.primary_key:
+						self.__class__._ids += 1
 						setattr(
 							self,
 							"_primary_key",
 							{
 								"field": field,
 								"field_name": field_name,
-								"value": next(self._ids) + field.default,
+								"value": self.__class__._ids,
 							},
 						)
 
@@ -152,13 +170,37 @@ class Model(metaclass=MetaModel):
 				self.fields[field_name] = getattr(self, field_name)
 
 		if not getattr(self, "_primary_key"):
-			raise ValueError(
-				"According to database theory, each table should have one PrimaryKey field"
-			)
+			raise PrimaryKeyError()
+
+		self.last_action = {}
 
 	@property
-	def pk(self):
+	def pk(self) -> Any:
+		"""
+		Get primary key value
+
+		:returns:   primary key value
+		:rtype:     primary key
+		"""
 		return self._primary_key["value"]
+
+	def commit(self):
+		"""
+		Commit changes
+		"""
+		logger.info(f"[{self._table_name}] Commit changes...")
+		self.objects.commit()
+
+	def get_audit_history(self) -> list:
+		"""
+		Get audit history
+
+		:returns:   The audit history.
+		:rtype:     List[AuditEntry]
+		"""
+		return self.audit_manager.get_audit_history(
+			self._model_name, self._table_name, self.pk
+		)
 
 	def view_table_info(self):
 		"""
@@ -179,30 +221,61 @@ class Model(metaclass=MetaModel):
 		console = Console()
 		console.print(table)
 
-	def save(self):
+	def add_hook(self, before_action: str, func: Callable, func_args: tuple = ()):
+		"""
+		Adds a hook.
+
+		:param		before_action:	The before action
+		:type		before_action:	str
+		:param		func:			The function
+		:type		func:			Callable
+		:param		func_args:		The function arguments
+		:type		func_args:		tuple
+
+		:raises		ValueError:		unknown before action
+		"""
+		actions = ["save", "delete", "update"]
+
+		if before_action.lower() not in actions:
+			raise ValueError(
+				f"Unknown action: {before_action}. Supported actions: {actions}"
+			)
+
+		logger.info(
+			f"[{self._table_name}] Add Model Hook: before {before_action} execute {func.__name__}"
+		)
+
+		self.hooks[before_action.lower()] = {"function": func, "args": func_args}
+
+	def save(self, ignore: bool = False):
 		"""
 		CRUD function: save
 		"""
 		fields = []
 		values = []
 
+		if self.hooks:
+			func = self.hooks["save"]["function"]
+			logger.debug(f"Exec Model Hook[save]: {func.__name__}")
+			func(*self.hooks["save"]["args"])
+
 		for k, v in self._get_formatted_sql_fields().items():
+			fields.append(k)
 			if "PRIMARY KEY" in v:
-				continue
+				values.append(self._primary_key["value"])
 			else:
-				fields.append(k)
 				values.append(getattr(self, k))
 
 		columns = ", ".join(fields)
 		count = ", ".join(["?" for _ in values])
 
 		try:
-			self.objects.insert(self._table_name, columns, count, tuple(values))
+			self.objects.insert(self._table_name, columns, count, tuple(values), ignore)
 		except Exception as ex:
 			print(
 				f'An exception occurred: "{ex}". We save changes to the database using commit...'
 			)
-			self.objects.commit_changes()
+			raise ex
 
 	def update(self, **kwargs):
 		"""
@@ -217,6 +290,17 @@ class Model(metaclass=MetaModel):
 					orig_field = getattr(self, key)
 					setattr(self, key, self._original_fields[key].to_db_value(value))
 					self.objects.update(self._table_name, key, orig_field, value)
+					self.audit_manager.track_changes(
+						self._model_name,
+						self._table_name,
+						self.pk,
+						key,
+						orig_field,
+						value,
+					)
+					logger.info(
+						f"[{self._table_name}] Update {self._model_name}#{self.pk} {key}: {orig_field} -> {value}"
+					)
 
 	def delete(self, field_name: str = None, field_value: Any = None):
 		"""
@@ -228,10 +312,48 @@ class Model(metaclass=MetaModel):
 		:type		field_value:  Any
 		"""
 		if field_name is not None and field_value is not None:
+			logger.info(
+				f"[{self._table_name}] Delete model by {field_name}={field_value}"
+			)
 			self.objects.delete(self._table_name, field_name, field_value)
 			return
 
+		logger.info(
+			f'[{self._table_name}] Delete model {self._primary_key["field_name"]}={self.pk}'
+		)
 		self.objects.delete(self._table_name, self._primary_key["field_name"], self.pk)
+		self.audit_manager.track_changes(
+			self._model_name,
+			self._table_name,
+			self.pk,
+			self._table_name,
+			self._model_name,
+			"<DELETED>",
+		)
+		self.last_action["type"] = "DELETE"
+		self.last_action["timestamp"] = datetime.now()
+
+	def rollback_last_action(self):
+		"""
+		Rollback (revert) last action
+		"""
+		if not self.last_action:
+			return
+
+		if self.last_action["type"] == "DELETE":
+			logger.info("Rollback last action: delete")
+			self.audit_manager.revert_changes(
+				self._model_name,
+				self._table_name,
+				self.pk,
+				self._table_name,
+				self.last_action["timestamp"],
+			)
+			self.save()
+			self.last_action = {}
+		else:
+			logger.error(f'Unknown last action type: {self.last_action["type"]}')
+			return
 
 	def _get_formatted_sql_fields(self) -> dict:
 		"""
