@@ -1,3 +1,9 @@
+commit 593e754c6054c04ba3a1c3c5b0d9c9263266fb6b
+Author: alexeev-prog <alexeev.dev@mail.ru>
+Date:   Sun Oct 13 21:48:12 2024 +0700
+
+    feat/docs/fix: create new method of model creation (session models), fix bugs
+
 commit 0d7f4f67d073a2336c835a5a4174f5ae34573887
 Author: alexeev-prog <alexeev.dev@mail.ru>
 Date:   Sun Oct 13 18:52:46 2024 +0700

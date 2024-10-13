@@ -3,7 +3,7 @@ from sqlsymphony_orm.models.session_models import SessionModel
 from sqlsymphony_orm.models.session_models import SQLiteSession
 from sqlsymphony_orm.queries import QueryBuilder
 
-session = SQLiteSession('example.db')
+session = SQLiteSession("example.db")
 
 
 class User(SessionModel):
@@ -14,7 +14,7 @@ class User(SessionModel):
 	cash = RealField(null=False, default=0.0)
 
 	def __repr__(self):
-		return f'<User {self.pk}>'
+		return f"<User {self.pk}>"
 
 
 class Comment(SessionModel):
@@ -23,23 +23,30 @@ class Comment(SessionModel):
 	user_id = IntegerField(null=False)
 
 
-user = User(name='John')
-user2 = User(name='Bob')
-user3 = User(name='Ellie')
+user = User(name="John")
+user2 = User(name="Bob")
+user3 = User(name="Ellie")
 session.add(user)
 session.add(user2)
 session.add(user3)
 session.commit()
 session.delete(user3)
 session.commit()
-session.update(model=user2, name='Anna')
+session.update(model=user2, name="Anna")
 session.commit()
 
 comment = Comment(name=user.name, user_id=user.pk)
 session.add(comment)
 session.commit()
 
-print(session.filter(QueryBuilder().SELECT(*User._original_fields.keys()).FROM(User.table_name).WHERE(name='Anna')))
+print(
+	session.filter(
+		QueryBuilder()
+		.SELECT(*User._original_fields.keys())
+		.FROM(User.table_name)
+		.WHERE(name="Anna")
+	)
+)
 print(session.get_all())
 print(session.get_all_by_module(User))
 session.close()

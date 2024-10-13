@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Any, Dict, Tuple, Callable
+from typing import List, Any, Union
 from uuid import uuid4
 from abc import ABC, abstractmethod
 from collections import OrderedDict
@@ -14,11 +14,6 @@ from sqlsymphony_orm.exceptions import (
 	FieldValidationError,
 	NullableFieldError,
 	FieldNamingError,
-)
-from sqlsymphony_orm.utils.auditing import (
-	AuditManager,
-	InMemoryAuditStorage,
-	BasicChangeObserver,
 )
 from sqlsymphony_orm.utils.auditing import (
 	AuditManager,
@@ -200,25 +195,117 @@ class SessionModel(metaclass=MetaSessionModel):
 
 
 class Session(ABC):
+	"""
+	This class describes a session.
+	"""
+
 	@abstractmethod
-	def add(self, model: SessionModel):
-		raise NotImplementedError()
+	def reconnect(self):
+		"""
+		reconnect to database
+		"""
+		raise NotImplementedError
+
+	@abstractmethod
+	def get_all(self):
+		"""
+		Gets all models
+		"""
+		raise NotImplementedError
+
+	@abstractmethod
+	def get_all_by_module(self, needed_model: SessionModel):
+		"""
+		Gets all models by module.
+
+		:param		needed_model:  The needed model
+		:type		needed_model:  SessionModel
+		"""
+		raise NotImplementedError
+
+	@abstractmethod
+	def drop_table(self, table_name: str):
+		"""
+		drop table
+
+		:param		table_name:	 The table name
+		:type		table_name:	 str
+		"""
+		raise NotImplementedError
+
+	@abstractmethod
+	def filter(self, query: "QueryBuilder", first: bool = False):
+		"""
+		Filter and get models by query
+
+		:param		query:	The query
+		:type		query:	QueryBuilder
+		:param		first:	The first
+		:type		first:	bool
+		"""
+		raise NotImplementedError
 
 	@abstractmethod
 	def update(self, model: SessionModel, **kwargs):
-		raise NotImplementedError()
+		"""
+		Update model
+
+		:param		model:	 The model
+		:type		model:	 SessionModel
+		:param		kwargs:	 The keywords arguments
+		:type		kwargs:	 dictionary
+		"""
+		raise NotImplementedError
+
+	@abstractmethod
+	def add(self, model: SessionModel, ignore: bool = False):
+		"""
+		Add model
+
+		:param		model:	 The model
+		:type		model:	 SessionModel
+		:param		ignore:	 The ignore
+		:type		ignore:	 bool
+		"""
+		raise NotImplementedError
 
 	@abstractmethod
 	def delete(self, model: SessionModel):
-		raise NotImplementedError()
+		"""
+		Deletes the given model.
+
+		:param		model:	The model
+		:type		model:	SessionModel
+		"""
+		raise NotImplementedError
 
 	@abstractmethod
 	def commit(self):
-		raise NotImplementedError()
+		"""
+		Commit changes
+		"""
+		raise NotImplementedError
+
+	@abstractmethod
+	def close(self):
+		"""
+		Close connection
+		"""
+		raise NotImplementedError
 
 
 class SQLiteSession(Session):
+	"""
+	This class describes a sqlite session.
+	"""
+
 	def __init__(self, database_file: str):
+		"""
+		Constructs a new instance.
+
+		:param		database_file:	The database file
+		:type		database_file:	str
+		"""
 		self.database_file = Path(database_file)
 		self.models = {}
 		self.manager = SQLiteMultiManager(self.database_file)
@@ -226,14 +313,32 @@ class SQLiteSession(Session):
 		self.audit_manager.attach(BasicChangeObserver())
 
 	def reconnect(self):
+		"""
+		Reconnecto to database
+		"""
 		self.manager.reconnect()
 
-	def get_all(self):
-		models_instances = [self.models[model]['model'] for model in self.models.keys()]
+	def get_all(self) -> List[SessionModel]:
+		"""
+		Gets all.
+
+		:returns:	All.
+		:rtype:		List[SessionModel]
+		"""
+		models_instances = [self.models[model]["model"] for model in self.models.keys()]
 		return models_instances
 
-	def get_all_by_module(self, needed_model: SessionModel):
-		all_instances = [self.models[model]['model'] for model in self.models.keys()]
+	def get_all_by_module(self, needed_model: SessionModel) -> List[SessionModel]:
+		"""
+		Gets all by module.
+
+		:param		needed_model:  The needed model
+		:type		needed_model:  SessionModel
+
+		:returns:	All by module.
+		:rtype:		List[SessionModel]
+		"""
+		all_instances = [self.models[model]["model"] for model in self.models.keys()]
 		needed_instances = []
 		model_name = needed_model._model_name
 
@@ -244,29 +349,61 @@ class SQLiteSession(Session):
 		return needed_instances
 
 	def drop_table(self, table_name: str):
+		"""
+		Drop table
+
+		:param		table_name:	 The table name
+		:type		table_name:	 str
+		"""
 		self.manager.drop_table(table_name)
 
-	def filter(self, query: 'QueryBuilder', first: bool=False):
+	def filter(
+		self, query: "QueryBuilder", first: bool = False
+	) -> Union[List[SessionModel], SessionModel]:
+		"""
+		Filter and get model by query
+
+		:param		query:	The query
+		:type		query:	QueryBuilder
+		:param		first:	The first
+		:type		first:	bool
+
+		:returns:	list with SessionModel or SessionModel
+		:rtype:		Union[List[SessionModel], SessionModel]
+		"""
 		db_results = self.manager.filter(str(query))
 		results = []
 		fields = {}
 
 		for unique_id, curr_model in self.models.items():
-			model = curr_model['model']
+			model = curr_model["model"]
 			fields[unique_id] = {
-				'keys': model._original_fields.keys(),
-				'values': [getattr(model, value) if model._primary_key['field_name'] != value else model.pk for value in model._original_fields.keys()]
+				"keys": model._original_fields.keys(),
+				"values": [
+					getattr(model, value)
+					if model._primary_key["field_name"] != value
+					else model.pk
+					for value in model._original_fields.keys()
+				],
 			}
 
 		for result in db_results:
 			for unique_id, data in fields.items():
-				if len(data['keys']) == len(result):
-					if tuple(data['values']) == result:
-						results.append(self.models[unique_id]['model'])
+				if len(data["keys"]) == len(result):
+					if tuple(data["values"]) == result:
+						results.append(self.models[unique_id]["model"])
 
 		return results[0] if first else results
 
 	def update(self, model: SessionModel, **kwargs):
+		"""
+		Update model
+
+		:param		model:	 The model
+		:type		model:	 SessionModel
+		:param		kwargs:	 The keywords arguments
+		:type		kwargs:	 dictionary
+		"""
 		current_model = self.models.get(model.unique_id, None)
 
 		if current_model is None:
@@ -298,45 +435,75 @@ class SQLiteSession(Session):
 						f"[{model.table_name}] Update {model._model_name}#{model.pk} {key}: {orig_field} -> {value}"
 					)
 
-		self.models[model.unique_id]['model'] = model
+		self.models[model.unique_id]["model"] = model
 
-	def add(self, model: SessionModel, ignore: bool=False):
+	def add(self, model: SessionModel, ignore: bool = False):
+		"""
+		Add new model
+
+		:param		model:	 The model
+		:type		model:	 SessionModel
+		:param		ignore:	 The ignore
+		:type		ignore:	 bool
+		"""
 		if self.models.get(model.unique_id, None) is not None:
-			logger.warning(f'Model {model.unique_id} already added')
+			logger.warning(f"Model {model.unique_id} already added")
 			return
 
-		self.models[model.unique_id] = {
-			'model': model
-		}
+		self.models[model.unique_id] = {"model": model}
 
-		self.audit_manager.track_changes(model._model_name, model.table_name, 
-									model.unique_id, 'save', "NONE", model._model_name)
+		self.audit_manager.track_changes(
+			model._model_name,
+			model.table_name,
+			model.unique_id,
+			"save",
+			"NONE",
+			model._model_name,
+		)
 
 		self.manager.create_table(model.table_name, model.get_formatted_sql_fields())
-		self.manager.insert(model.table_name, model.get_formatted_sql_fields(), model.pk, model, ignore)
+		self.manager.insert(
+			model.table_name, model.get_formatted_sql_fields(), model.pk, model, ignore
+		)
 
 	def delete(self, model: SessionModel):
+		"""
+		Deletes the given model.
+
+		:param		model:	The model
+		:type		model:	SessionModel
+		"""
 		current_model = self.models.get(model.unique_id, None)
 
 		if current_model is None:
-			logger.error(f'Model {model.unique_id} does not exists')
+			logger.error(f"Model {model.unique_id} does not exists")
 			return
 
 		self.audit_manager.track_changes(
-			current_model['model']._model_name,
-			current_model['model'].table_name,
-			current_model['model'].pk,
-			current_model['model'].table_name,
-			current_model['model']._model_name,
+			current_model["model"]._model_name,
+			current_model["model"].table_name,
+			current_model["model"].pk,
+			current_model["model"].table_name,
+			current_model["model"]._model_name,
 			"<DELETED>",
 		)
 
-		self.manager.delete(current_model['model'].table_name, current_model['model']._primary_key["field_name"], current_model['model'].pk)
+		self.manager.delete(
+			current_model["model"].table_name,
+			current_model["model"]._primary_key["field_name"],
+			current_model["model"].pk,
+		)
 
 	def commit(self):
+		"""
+		Commit changes
+		"""
 		for _, model in self.models.items():
 			self.manager.commit()
 
 	def close(self):
+		"""
+		Close connection
+		"""
 		for _, model in self.models.items():
 			self.manager.close_connection()

@@ -322,9 +322,7 @@ class SQLiteModelManager(ModelManager):
 			results.append(model)
 
 		self.q = (
-			QueryBuilder()
-			.SELECT(*self._model_fields)
-			.FROM(self.model_class.table_name)
+			QueryBuilder().SELECT(*self._model_fields).FROM(self.model_class.table_name)
 		)
 
 		return results
