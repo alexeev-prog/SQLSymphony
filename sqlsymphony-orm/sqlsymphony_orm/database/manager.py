@@ -149,15 +149,15 @@ class SQLiteModelManager(ModelManager):
 
 		q = QueryBuilder()
 
-		self.q = q.SELECT(*self._model_fields).FROM(model_class._table_name)
+		self.q = q.SELECT(*self._model_fields).FROM(self.model_class.table_name)
 		self._connector = SQLiteDBConnector()
 
-		if model_class._table_name != "model":
+		if self.model_class.table_name != "model":
 			self._connector.connect(database_name)
 
 	def drop_table(self, table_name: str = None):
 		if table_name is None:
-			table_name = self.model_class._table_name
+			table_name = self.model_class.table_name
 
 		query = f"DROP TABLE IF EXISTS {table_name}"
 
@@ -165,6 +165,9 @@ class SQLiteModelManager(ModelManager):
 
 		self._connector.fetch(query)
 		self._connector.commit()
+
+	def close_connection(self):
+		self._connector.close_connection()
 
 	def insert(
 		self,
@@ -321,7 +324,7 @@ class SQLiteModelManager(ModelManager):
 		self.q = (
 			QueryBuilder()
 			.SELECT(*self._model_fields)
-			.FROM(self.model_class._table_name)
+			.FROM(self.model_class.table_name)
 		)
 
 		return results
@@ -483,3 +486,185 @@ class SQLiteMultiModelManager(MultiModelManager):
 			return
 
 		return model["model"]
+
+
+class MultiManager(ABC):
+	@abstractmethod
+	def reconnect(self):
+		raise NotImplementedError()
+
+	@abstractmethod
+	def drop_table(self, table_name: str):
+		raise NotImplementedError()
+
+	@abstractmethod
+	def close_connection(self):
+		raise NotImplementedError()
+
+	@abstractmethod
+	def insert(
+		self,
+		table_name: str,
+		formatted_fields: dict,
+		pk: int,
+		model_class: "Model",
+		ignore: bool = False,
+	):
+		raise NotImplementedError()
+
+	@abstractmethod
+	def update(self, table_name: str, key: str, orig_field: str, new_value: str):
+		raise NotImplementedError()
+
+	@abstractmethod
+	def filter(self, query: QueryBuilder):
+		raise NotImplementedError()
+
+	@abstractmethod
+	def commit(self):
+		raise NotImplementedError()
+
+	@abstractmethod
+	def create_table(self, table_name: str, fields: dict):
+		raise NotImplementedError()
+
+	@abstractmethod
+	def delete(self, table_name: str, field_name: str, field_value: Any):
+		raise NotImplementedError()
+
+
+class SQLiteMultiManager(MultiManager):
+	def __init__(self, database_name: str):
+		self._connector = SQLiteDBConnector()
+		self.database_name = database_name
+		self._connector.connect(self.database_name)
+
+	def reconnect(self):
+		self._connector.connect(self.database_name)
+
+	def drop_table(self, table_name: str):
+		query = f"DROP TABLE IF EXISTS {table_name}"
+
+		logger.warning(f"Drop table: {table_name}")
+
+		self._connector.fetch(query)
+		self._connector.commit()
+
+	def close_connection(self):
+		self._connector.close_connection()
+
+	def insert(
+		self,
+		table_name: str,
+		formatted_fields: dict,
+		pk: int,
+		model_class: "Model",
+		ignore: bool = False,
+	):
+		"""
+		Insert a fields to database
+
+		:param		table_name:	 The table name
+		:type		table_name:	 str
+		:param		columns:	 The columns
+		:type		columns:	 str
+		:param		count:		 The count
+		:type		count:		 str
+		:param		values:		 The values
+		:type		values:		 tuple
+		"""
+		fields = []
+		values = []
+
+		for k, v in formatted_fields.items():
+			fields.append(k)
+			if "PRIMARY KEY" in v:
+				values.append(pk)
+			else:
+				values.append(getattr(model_class, k))
+
+		columns = ", ".join(fields)
+		count = ", ".join(["?" for _ in values])
+
+		query = "INSERT "
+
+		if ignore:
+			query += "OR IGNORE "
+
+		query += f"INTO {table_name} ({columns}) VALUES ({count})"
+
+		logger.info(
+			f'[{table_name}] Insert {"(or ignore)" if ignore else ""} new model into database'
+		)
+
+		self._connector.fetch(query, values)
+
+	def update(self, table_name: str, key: str, orig_field: str, new_value: str):
+		"""
+		Update fields in database table
+
+		:param		table_name:	 The table name
+		:type		table_name:	 str
+		:param		key:		 The key
+		:type		key:		 str
+		:param		orig_field:	 The original field
+		:type		orig_field:	 str
+		:param		new_value:	 The new value
+		:type		new_value:	 str
+		"""
+		query = f"UPDATE {table_name} SET {key} = ? WHERE {key} = ?"
+
+		logger.info(f"[{table_name}] Update model: {key}={new_value}")
+
+		self._connector.fetch(query, (new_value, orig_field))
+
+	def filter(self, query: str):
+		result = self._connector.fetch(query)
+
+		return result
+
+	def commit(self):
+		"""
+		Commits changes.
+		"""
+		self._connector.commit()
+
+	def create_table(self, table_name: str, fields: dict):
+		"""
+		Creates a table.
+
+		:param		table_name:	 The table name
+		:type		table_name:	 str
+		:param		fields:		 The fields
+		:type		fields:		 dict
+		"""
+		columns = [f"{k} {v}" for k, v in fields.items()]
+
+		query = f"CREATE TABLE IF NOT EXISTS {table_name} ("
+
+		for column in columns:
+			query += f"{column},"
+
+		query = query[:-1]
+		query += ")"
+
+		logger.info(f"Create new table: {table_name}")
+
+		self._connector.fetch(query)
+		self._connector.commit()
+
+	def delete(self, table_name: str, field_name: str, field_value: Any):
+		"""
+		Delete model from database
+
+		:param		table_name:	  The table name
+		:type		table_name:	  str
+		:param		field_name:	  The field name
+		:type		field_name:	  str
+		:param		field_value:  The field value
+		:type		field_value:  Any
+		"""
+		query = f"DELETE FROM {table_name} WHERE {field_name} = ?"
+		logger.info(f"[{table_name}] Delete model ({field_name}={field_value})")
+
+		self._connector.fetch(query, (field_value,))

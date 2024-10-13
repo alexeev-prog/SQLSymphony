@@ -106,6 +106,7 @@ class SQLiteDBConnector(DBConnector):
 		"""
 		pragmas = ["PRAGMA foreign_keys = 1"]
 		self._connection = sqlite3.connect(database_name)
+		self.database_name = database_name
 		logger.info(f"[{database_name}] Connect database...")
 
 		for pragma in pragmas:

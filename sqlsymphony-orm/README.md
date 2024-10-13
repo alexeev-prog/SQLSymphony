@@ -98,52 +98,7 @@ Once installed, you can start using the library in your Python projects. Check o
 ## 💻 Usage Examples
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-### Creating a Model
-
-```python
-from sqlsymphony_orm.datatypes.fields import IntegerField, CharField, RealField, TextField, SlugField
-from sqlsymphony_orm.models.orm_models import Model
-from sqlsymphony_orm.database.manager import SQLiteMultiModelManager
-
-
-class BankAccount(Model):
-	__tablename__ = 'BankAccounts'
-	__database__ = 'bank.db'
-
-	id = IntegerField(primary_key=True)
-	name = TextField(null=False)
-	cash = RealField(null=False, default=0.0)
-
-	def __repr__(self):
-		return f'<BankAccount {self.id}>'
-
-
-account = BankAccount(name='John', cash=100.0)
-account2 = BankAccount(name='Bob', cash=100000000.0)
-account2.save()
-account2.commit()
-account.save()
-account.commit()
-
-cash = float(input('Enter sum: '))
-account.update(cash=account.cash + cash)
-account.commit()
-account2.update(cash=account2.cash - cash)
-account2.commit()
-
-print(account.cash, account2.cash)
-print(BankAccount.objects.fetch())
-print(BankAccount.objects.filter(name="Bob", first=True))
-
-BankAccount.objects.drop_table()
-
-mm_manager = SQLiteMultiModelManager('database.db')
-mm_manager.add_model(account)
-mm_manager.model_manager(account._model_name).create_table(account._table_name, account.get_formatted_sql_fields())
-mm_manager.model_manager(account._model_name).insert(account._table_name, account.get_formatted_sql_fields(), account.pk, account)
-mm_manager.model_manager(account._model_name).commit()
-```
-
+### Basic Features
 <details>
 <summary>Cache Performance</summary>
 
@@ -216,7 +171,7 @@ class BankAccount(Model):
 	cash = RealField(null=False, default=0.0)
 
 	def __repr__(self):
-		return f'<BankAccount {self.id}>'
+		return f'<BankAccount {self.pk}>'
 
 account = BankAccount(name="John", cash=100.0)
 
@@ -228,6 +183,225 @@ mm_manager.model_manager(account._model_name).commit()
 ```	
 
 </details>
+
+### Creating a Model
+
+#### Session Style
+With this method, you create and manage models and objects through an instance of the session class:
+
+```python
+from sqlsymphony_orm.datatypes.fields import IntegerField, RealField, TextField
+from sqlsymphony_orm.models.session_models import SessionModel
+from sqlsymphony_orm.models.session_models import SQLiteSession
+from sqlsymphony_orm.queries import QueryBuilder
+
+session = SQLiteSession('example.db')
+
+
+class User(SessionModel):
+	__tablename__ = "Users"
+
+	id = IntegerField(primary_key=True)
+	name = TextField(null=False)
+	cash = RealField(null=False, default=0.0)
+
+	def __repr__(self):
+		return f'<User {self.pk}>'
+
+
+user = User(name='John')
+user2 = User(name='Bob')
+user3 = User(name='Ellie')
+session.add(user)
+session.add(user2)
+session.add(user3)
+session.commit()
+session.delete(user3)
+session.commit()
+session.update(model=user2, name='Anna')
+session.commit()
+
+print(session.filter(QueryBuilder().SELECT(*User._original_fields.keys()).FROM(User.table_name).WHERE(name='Anna')))
+
+session.close()
+```
+
+##### Performing CRUD Operations
+
+<details>
+<summary>Drop table</summary>
+
+```python
+from sqlsymphony_orm.datatypes.fields import IntegerField, RealField, TextField
+from sqlsymphony_orm.models.session_models import SessionModel
+from sqlsymphony_orm.models.session_models import SQLiteSession
+from sqlsymphony_orm.queries import QueryBuilder
+
+session = SQLiteSession('example.db')
+
+
+class User(SessionModel):
+	__tablename__ = "Users"
+
+	id = IntegerField(primary_key=True)
+	name = TextField(null=False)
+	cash = RealField(null=False, default=0.0)
+
+	def __repr__(self):
+		return f'<User {self.pk}>'
+
+
+user = User(name='John')
+user2 = User(name='Bob')
+user3 = User(name='Ellie')
+session.add(user)
+session.add(user2)
+session.add(user3)
+session.commit()
+session.delete(user3)
+session.commit()
+session.update(model=user2, name='Anna')
+session.commit()
+
+print(session.filter(QueryBuilder().SELECT(*User._original_fields.keys()).FROM(User.table_name).WHERE(name='Anna')))
+
+session.drop_table()
+session.close()
+```	
+
+</details>
+
+<details>
+<summary>Create a new record</summary>
+
+```python
+user = User(name='Charlie')
+session.add(user)
+session.commit()
+
+user2 = User(name='John')
+session.add(user2)
+session.commit()
+
+print(session.get_all())
+```
+
+</details>
+
+<details>
+<summary>Update record</summary>
+
+```python
+user = User(name='John')
+user2 = User(name='Bob')
+session.add(user)
+session.add(user2)
+
+session.update(model=user2, name='Anna')
+session.commit()
+
+print(session.get_all())
+```
+
+</details>
+
+<details>
+<summary>Delete record</summary>
+
+```python
+user = User(name='John')
+user2 = User(name='Bob')
+user3 = User(name='Ellie')
+
+session.add(user)
+session.add(user2)
+session.add(user3)
+
+session.commit()
+
+session.delete(user3)
+
+session.commit()
+
+print(session.get_all())
+```
+
+</details>
+
+<details>
+<summary>Filter</summary>
+
+```python
+from sqlsymphony_orm.queries import QueryBuilder
+
+user = User(name='John')
+user2 = User(name='Bob')
+user3 = User(name='Ellie')
+session.add(user)
+session.add(user2)
+session.add(user3)
+session.commit()
+session.delete(user3)
+session.commit()
+session.update(model=user2, name='Anna')
+session.commit()
+
+print(session.filter(QueryBuilder().SELECT(*User._original_fields.keys()).FROM(User.table_name).WHERE(name='Anna')))
+print(session.get_all())
+```
+
+</details>
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+#### Model Style
+With this method, you create and manage models and objects through an instance of the model class:
+
+```python
+from sqlsymphony_orm.datatypes.fields import IntegerField, CharField, RealField, TextField, SlugField
+from sqlsymphony_orm.models.orm_models import Model
+from sqlsymphony_orm.database.manager import SQLiteMultiModelManager
+
+
+class BankAccount(Model):
+	__tablename__ = 'BankAccounts'
+	__database__ = 'bank.db'
+
+	id = IntegerField(primary_key=True)
+	name = TextField(null=False)
+	cash = RealField(null=False, default=0.0)
+
+	def __repr__(self):
+		return f'<BankAccount {self.pk}>'
+
+
+account = BankAccount(name='John', cash=100.0)
+account2 = BankAccount(name='Bob', cash=100000000.0)
+account2.save()
+account2.commit()
+account.save()
+account.commit()
+
+cash = float(input('Enter sum: '))
+account.update(cash=account.cash + cash)
+account.commit()
+account2.update(cash=account2.cash - cash)
+account2.commit()
+
+print(account.cash, account2.cash)
+print(BankAccount.objects.fetch())
+print(BankAccount.objects.filter(name="Bob", first=True))
+
+BankAccount.objects.drop_table()
+
+mm_manager = SQLiteMultiModelManager('database.db')
+mm_manager.add_model(account)
+mm_manager.model_manager(account._model_name).create_table(account._table_name, account.get_formatted_sql_fields())
+mm_manager.model_manager(account._model_name).insert(account._table_name, account.get_formatted_sql_fields(), account.pk, account)
+mm_manager.model_manager(account._model_name).commit()
+```
+
+##### Performing CRUD Operations
 
 <details>
 <summary>Drop table</summary>
@@ -246,7 +420,7 @@ class BankAccount(Model):
 	cash = RealField(null=False, default=0.0)
 
 	def __repr__(self):
-		return f'<BankAccount {self.id}>'
+		return f'<BankAccount {self.pk}>'
 
 
 account = BankAccount(name='John', cash=100.0)
@@ -270,8 +444,6 @@ BankAccount.objects.drop_table()
 ```	
 
 </details>
-
-### Performing CRUD Operations
 
 <details>
 <summary>Create a new record</summary>
@@ -364,6 +536,59 @@ print(user.objects.filter(name="Bobby"))
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## 🔧 Specifications
+
+### Session Specification
+Session Models are a new, recommended way to work with models and the database. This method is suitable for more complex projects. If you have a light project, it is better to use <a href='#model-specification'>regular Models</a>.
+
+#### SessionModel
+A class of database model.
+
+##### Self Variables
+SessionModel has some global variables that are needed to configure database fields:
+
+ + `__tablename__` - table name
+ + `_ids` - the value from which the primary key calculation begins
+
+The session model also has the following parameters, which are set at the stage of creating a class object:
+
+ + `table_name` - same as `__tablename__`
+ + `model_name` - class model name. if `__tablename__` or `__database__` are None, then their value is changed to the class model name.
+ + `_original_fields` - dictionary with original fields. The dictionary looks like this: `'<field name>'='<field class>'`
+ + `fields` - fields dictionary.
+ + `unique_id` - an UUID4 of instance.
+ + `_last_action` - dictionary storing the last action.
+
+##### Methods
+Session Model has some methods and functions for interactions with database:
+
+ + `pk` (property) - a primary key value.
+ + `view_table_info()` - print beautiful table with some info about model.
+ + `get_formatted_sql_fields()` - return an dictionary with formatted fields for sql query (ex. insert)
+
+#### Session
+A class for session.
+
+##### Self Variables
+Session has some global variables that are needed to configure database:
+
+ + `database_file` - filepath to database
+ + `models` - dictionary with saved models.
+ + `manager` - main database manager.
+ + `audit_manager` - audit manager instance.
+
+##### Methods
+Session has some methods and functions for interactions with database:
+
+ + `get_all()` - get all added models.
+ + `get_all_by_module(self, needed_model: SessionModel)` - get all saved models by model type.
+ + `drop_table(self, table_name: str)` - drop table.
+ + `filter(self, query: 'QueryBuilder', first: bool=False)` - filter and get models by query.
+ + `update(self, model: SessionModel, **kwargs)` - update model.
+ + `add(self, model: SessionModel, ignore: bool=False)` - add (with `OR IGNORE` sql prefix if ignore is True) new model.
+ + `delete(self, model: SessionModel)` - delete model.
+ + `commit` - commit changes.
+ + `close` - close connection.
+ + `reconnect` - reconnect to database.
 
 ### Model Specification
 The Model class is needed to create a model. It acts as an element in the database and allows, through the objects subclass, to manage other objects of the class through the object.

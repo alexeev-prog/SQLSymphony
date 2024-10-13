@@ -10,8 +10,9 @@ from rich import print
 
 from loguru import logger
 
-from sqlsymphony_orm.datatypes.fields import BaseDataType, IntegerField
 from sqlsymphony_orm.database.manager import SQLiteModelManager
+from sqlsymphony_orm.datatypes.fields import BaseDataType, IntegerField
+from sqlsymphony_orm.constants import RESTRICTIED_FIELDS
 from sqlsymphony_orm.exceptions import (
 	PrimaryKeyError,
 	FieldValidationError,
@@ -23,28 +24,6 @@ from sqlsymphony_orm.utils.auditing import (
 	InMemoryAuditStorage,
 	BasicChangeObserver,
 )
-
-RESTRICTIED_FIELDS: list = [
-	"__new__",
-	"__init__",
-	"__str__",
-	"__repr__",
-	"pk",
-	"view_table_info",
-	"save",
-	"update",
-	"delete",
-	"get_formatted_sql_fields",
-	"objects",
-	"_original_fields",
-	"database_name",
-	"_model_name",
-	"table_name",
-	"__tablename__",
-	"__database__",
-	"fields",
-	"_unique_id",
-]
 
 
 class ModelManagerType(Enum):

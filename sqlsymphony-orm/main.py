@@ -12,7 +12,7 @@ class BankAccount(Model):
 	cash = RealField(null=False, default=0.0)
 
 	def __repr__(self):
-		return f"<BankAccount {self.id}>"
+		return f"<BankAccount {self.pk}>"
 
 
 account = BankAccount(name="John", cash=100.0)
@@ -37,9 +37,9 @@ BankAccount.objects.drop_table()
 mm_manager = SQLiteMultiModelManager("database.db")
 mm_manager.add_model(account)
 mm_manager.model_manager(account._model_name).create_table(
-	account._table_name, account.get_formatted_sql_fields()
+	account.table_name, account.get_formatted_sql_fields()
 )
 mm_manager.model_manager(account._model_name).insert(
-	account._table_name, account.get_formatted_sql_fields(), account.pk, account
+	account.table_name, account.get_formatted_sql_fields(), account.pk, account
 )
 mm_manager.model_manager(account._model_name).commit()

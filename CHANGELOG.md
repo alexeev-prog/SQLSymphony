@@ -1,3 +1,9 @@
+commit 0d7f4f67d073a2336c835a5a4174f5ae34573887
+Author: alexeev-prog <alexeev.dev@mail.ru>
+Date:   Sun Oct 13 18:52:46 2024 +0700
+
+    docs: improve docs and docstrings
+
 commit 45be6c5fabace309461358ac9a9dd982c06df01f
 Author: alexeev-prog <alexeev.dev@mail.ru>
 Date:   Sun Oct 13 18:43:54 2024 +0700
