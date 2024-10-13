@@ -68,10 +68,10 @@ class InMemoryCache(CacheBase):
 		"""
 		Constructs a new instance.
 
-		:param      max_size:  The maximum size
-		:type       max_size:  int
-		:param      ttl:       The ttl
-		:type       ttl:       int
+		:param		max_size:  The maximum size
+		:type		max_size:  int
+		:param		ttl:	   The ttl
+		:type		ttl:	   int
 		"""
 		self.max_size = max_size
 		self.ttl = ttl
@@ -82,11 +82,11 @@ class InMemoryCache(CacheBase):
 		"""
 		Gets the specified key.
 
-		:param      key:  The key
-		:type       key:  str
+		:param		key:  The key
+		:type		key:  str
 
-		:returns:   Any value
-		:rtype:     Any
+		:returns:	Any value
+		:rtype:		Any
 		"""
 		if key in self.cache:
 			if time.time() - self.timestamps[key] <= self.ttl:
@@ -100,12 +100,12 @@ class InMemoryCache(CacheBase):
 		"""
 		Set new cache element
 
-		:param      key:        The new value
-		:type       key:        str
-		:param      value:      The value
-		:type       value:      Any
-		:param      timestamp:  The timestamp
-		:type       timestamp:  float
+		:param		key:		The new value
+		:type		key:		str
+		:param		value:		The value
+		:type		value:		Any
+		:param		timestamp:	The timestamp
+		:type		timestamp:	float
 		"""
 		if len(self.cache) >= self.max_size:
 			oldest_key = min(self.timestamps, key=self.timestamps.get)
@@ -168,12 +168,12 @@ class SingletonCache(CacheBase, metaclass=Singleton):
 		"""
 		Constructs a new instance.
 
-		:param      cache_type:  The cache type
-		:type       cache_type:  Type[CacheBase]
-		:param      args:        The arguments
-		:type       args:        list
-		:param      kwargs:      The keywords arguments
-		:type       kwargs:      dictionary
+		:param		cache_type:	 The cache type
+		:type		cache_type:	 Type[CacheBase]
+		:param		args:		 The arguments
+		:type		args:		 list
+		:param		kwargs:		 The keywords arguments
+		:type		kwargs:		 dictionary
 		"""
 		self.cache = CacheFactory.create_cache(cache_type, *args, **kwargs)
 
@@ -181,11 +181,11 @@ class SingletonCache(CacheBase, metaclass=Singleton):
 		"""
 		Gets the specified key.
 
-		:param      key:  The key
-		:type       key:  str
+		:param		key:  The key
+		:type		key:  str
 
-		:returns:   Any value
-		:rtype:     Any
+		:returns:	Any value
+		:rtype:		Any
 		"""
 		return self.cache.get(key)
 
@@ -193,12 +193,12 @@ class SingletonCache(CacheBase, metaclass=Singleton):
 		"""
 		Set new cache element
 
-		:param      key:        The new value
-		:type       key:        str
-		:param      value:      The value
-		:type       value:      Any
-		:param      timestamp:  The timestamp
-		:type       timestamp:  float
+		:param		key:		The new value
+		:type		key:		str
+		:param		value:		The value
+		:type		value:		Any
+		:param		timestamp:	The timestamp
+		:type		timestamp:	float
 		"""
 		self.cache.set(key, value, timestamp)
 

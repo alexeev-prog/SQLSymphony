@@ -1,68 +1,45 @@
-from sqlsymphony_orm.datatypes.fields import IntegerField, CharField, TextField
+from sqlsymphony_orm.datatypes.fields import IntegerField, RealField, TextField
 from sqlsymphony_orm.models.orm_models import Model
-from sqlsymphony_orm.database.manager import SQLiteDatabaseSession
-from sqlsymphony_orm.database.connection import SQLiteDBConnector
+from sqlsymphony_orm.database.manager import SQLiteMultiModelManager
 
 
-class Video(Model):
-	__tablename__ = "Videos"
-	__database__ = "videos.db"
-
-	id = IntegerField(primary_key=True)
-	author = CharField(max_length=32)
-	title = CharField(max_length=64, null=False)
-	description = TextField(null=False)
-	views = IntegerField(null=False, default=0)
-
-	def __repr__(self):
-		return f"<Video {self.id} {self.title}>"
-
-
-class Comment(Model):
-	__tablename__ = "Comments"
-	__database__ = "videos.db"
+class BankAccount(Model):
+	__tablename__ = "BankAccounts"
+	__database__ = "bank.db"
 
 	id = IntegerField(primary_key=True)
-	video = IntegerField(null=False)
+	name = TextField(null=False)
+	cash = RealField(null=False, default=0.0)
 
 	def __repr__(self):
-		return f"<Comment {self.id} {self.video}>"
+		return f"<BankAccount {self.id}>"
 
 
-def hello():
-	print("hello")
+account = BankAccount(name="John", cash=100.0)
+account2 = BankAccount(name="Bob", cash=100000000.0)
+account2.save()
+account2.commit()
+account.save()
+account.commit()
 
+cash = float(input("Enter sum: "))
+account.update(cash=account.cash + cash)
+account.commit()
+account2.update(cash=account2.cash - cash)
+account2.commit()
 
-video = Video(
-	author="Alexeev",
-	title="How to make your own ORM in python",
-	description="Big video about python coding",
+print(account.cash, account2.cash)
+print(BankAccount.objects.fetch())
+print(BankAccount.objects.filter(name="Bob", first=True))
+
+BankAccount.objects.drop_table()
+
+mm_manager = SQLiteMultiModelManager("database.db")
+mm_manager.add_model(account)
+mm_manager.model_manager(account._model_name).create_table(
+	account._table_name, account.get_formatted_sql_fields()
 )
-video.save(ignore=True)
-video.commit()
-
-video2 = Video(author="Alexeev", title="Test", description="An another video", views=1)
-video2.save(ignore=True)
-video2.commit()
-video2.update(views=102)
-video2.delete()
-video2.commit()
-video2.rollback_last_action()
-video2.commit()
-
-comment = Comment(video=video2.pk)
-comment.add_hook("save", hello)
-comment.save(ignore=True)
-comment.commit()
-
-print(video.objects.fetch())
-print(comment.objects.fetch())
-print(video2.get_audit_history())
-
-connector = SQLiteDBConnector()
-connector.connect("database.db")
-
-with SQLiteDatabaseSession(connector, commit=True) as session:
-	session.fetch(
-		"CREATE TABLE IF NOT EXISTS BALABOLA (id INTEGER PRIMARY KEY, name VarChar(32))"
-	)
+mm_manager.model_manager(account._model_name).insert(
+	account._table_name, account.get_formatted_sql_fields(), account.pk, account
+)
+mm_manager.model_manager(account._model_name).commit()

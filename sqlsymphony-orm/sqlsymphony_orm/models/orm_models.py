@@ -1,5 +1,6 @@
 from typing import Any, Callable
 from uuid import uuid4
+from enum import Enum
 from collections import OrderedDict
 from datetime import datetime
 
@@ -33,17 +34,21 @@ RESTRICTIED_FIELDS: list = [
 	"save",
 	"update",
 	"delete",
-	"_get_formatted_sql_fields",
+	"get_formatted_sql_fields",
 	"objects",
 	"_original_fields",
-	"_database_name",
+	"database_name",
 	"_model_name",
-	"_table_name",
+	"table_name",
 	"__tablename__",
 	"__database__",
 	"fields",
 	"_unique_id",
 ]
+
+
+class ModelManagerType(Enum):
+	SQLITE3 = 0
 
 
 class MetaModel(type):
@@ -53,6 +58,7 @@ class MetaModel(type):
 
 	__tablename__ = None
 	__database__ = None
+	__type__ = ModelManagerType.SQLITE3
 
 	def __new__(cls, class_object: "Model", parents: tuple, attributes: dict):
 		"""
@@ -78,16 +84,16 @@ class MetaModel(type):
 		setattr(new_class, "_model_name", attributes["__qualname__"].lower())
 
 		if new_class.__tablename__ is None:
-			setattr(new_class, "_table_name", attributes["__qualname__"].lower())
+			setattr(new_class, "table_name", attributes["__qualname__"].lower())
 		else:
-			setattr(new_class, "_table_name", new_class.__tablename__)
+			setattr(new_class, "table_name", new_class.__tablename__)
 
 		if new_class.__database__ is None:
 			setattr(
-				new_class, "_database_name", f"{attributes['__qualname__'].lower()}.db"
+				new_class, "database_name", f"{attributes['__qualname__'].lower()}.db"
 			)
 		else:
-			setattr(new_class, "_database_name", new_class.__database__)
+			setattr(new_class, "database_name", new_class.__database__)
 
 		for k, v in attributes.items():
 			if isinstance(v, BaseDataType):
@@ -96,11 +102,16 @@ class MetaModel(type):
 
 		setattr(new_class, "_original_fields", fields)
 
-		setattr(
-			new_class,
-			"objects",
-			SQLiteModelManager(new_class, new_class._database_name),
-		)
+		if new_class.__type__ == ModelManagerType.SQLITE3:
+			setattr(
+				new_class,
+				"objects",
+				SQLiteModelManager(new_class, new_class.database_name),
+			)
+		else:
+			raise ValueError(
+				f"Database model type {new_class.__type__.value} dont supported"
+			)
 
 		return new_class
 
@@ -112,6 +123,7 @@ class Model(metaclass=MetaModel):
 
 	__tablename__ = None
 	__database__ = None
+	__type__ = ModelManagerType.SQLITE3
 	_ids = 0
 
 	def __init__(self, **kwargs):
@@ -122,11 +134,11 @@ class Model(metaclass=MetaModel):
 		:type		kwargs:	 dictionary
 		"""
 		self.fields = {}
-		self.hooks = {}
+		self._hooks = {}
 		self.audit_manager = AuditManager(InMemoryAuditStorage())
 		self.audit_manager.attach(BasicChangeObserver())
 
-		self.objects.create_table(self._table_name, self._get_formatted_sql_fields())
+		self.objects.create_table(self.table_name, self.get_formatted_sql_fields())
 
 		self.unique_id = str(uuid4())
 
@@ -172,15 +184,15 @@ class Model(metaclass=MetaModel):
 		if not getattr(self, "_primary_key"):
 			raise PrimaryKeyError()
 
-		self.last_action = {}
+		self._last_action = {}
 
 	@property
 	def pk(self) -> Any:
 		"""
 		Get primary key value
 
-		:returns:   primary key value
-		:rtype:     primary key
+		:returns:	primary key value
+		:rtype:		primary key
 		"""
 		return self._primary_key["value"]
 
@@ -188,32 +200,32 @@ class Model(metaclass=MetaModel):
 		"""
 		Commit changes
 		"""
-		logger.info(f"[{self._table_name}] Commit changes...")
+		logger.info(f"[{self.table_name}] Commit changes...")
 		self.objects.commit()
 
 	def get_audit_history(self) -> list:
 		"""
 		Get audit history
 
-		:returns:   The audit history.
-		:rtype:     List[AuditEntry]
+		:returns:	The audit history.
+		:rtype:		List[AuditEntry]
 		"""
 		return self.audit_manager.get_audit_history(
-			self._model_name, self._table_name, self.pk
+			self._model_name, self.table_name, self.pk
 		)
 
 	def view_table_info(self):
 		"""
 		View info about Model in table
 		"""
-		table = Table(title=f"Model {self._model_name} (table {self._table_name})")
+		table = Table(title=f"Model {self._model_name} (table {self.table_name})")
 
 		table.add_column("Field name", style="blue")
 		table.add_column("Field class", style="cyan")
 		table.add_column("SQL Field", style="magenta")
 		table.add_column("Value", style="green")
 
-		for k, v in self._get_formatted_sql_fields().items():
+		for k, v in self.get_formatted_sql_fields().items():
 			table.add_row(
 				str(k), str(self._original_fields[k]), str(v), str(self.fields[str(k)])
 			)
@@ -242,35 +254,24 @@ class Model(metaclass=MetaModel):
 			)
 
 		logger.info(
-			f"[{self._table_name}] Add Model Hook: before {before_action} execute {func.__name__}"
+			f"[{self.table_name}] Add Model Hook: before {before_action} execute {func.__name__}"
 		)
 
-		self.hooks[before_action.lower()] = {"function": func, "args": func_args}
+		self._hooks[before_action.lower()] = {"function": func, "args": func_args}
 
 	def save(self, ignore: bool = False):
 		"""
 		CRUD function: save
 		"""
-		fields = []
-		values = []
 
-		if self.hooks:
-			func = self.hooks["save"]["function"]
+		if self._hooks:
+			func = self._hooks["save"]["function"]
 			logger.debug(f"Exec Model Hook[save]: {func.__name__}")
-			func(*self.hooks["save"]["args"])
-
-		for k, v in self._get_formatted_sql_fields().items():
-			fields.append(k)
-			if "PRIMARY KEY" in v:
-				values.append(self._primary_key["value"])
-			else:
-				values.append(getattr(self, k))
-
-		columns = ", ".join(fields)
-		count = ", ".join(["?" for _ in values])
-
+			func(*self._hooks["save"]["args"])
 		try:
-			self.objects.insert(self._table_name, columns, count, tuple(values), ignore)
+			self.objects.insert(
+				self.table_name, self.get_formatted_sql_fields(), self.pk, self, ignore
+			)
 		except Exception as ex:
 			print(
 				f'An exception occurred: "{ex}". We save changes to the database using commit...'
@@ -289,17 +290,17 @@ class Model(metaclass=MetaModel):
 				if value is not None and self._original_fields[key].validate(value):
 					orig_field = getattr(self, key)
 					setattr(self, key, self._original_fields[key].to_db_value(value))
-					self.objects.update(self._table_name, key, orig_field, value)
+					self.objects.update(self.table_name, key, orig_field, value)
 					self.audit_manager.track_changes(
 						self._model_name,
-						self._table_name,
+						self.table_name,
 						self.pk,
 						key,
 						orig_field,
 						value,
 					)
 					logger.info(
-						f"[{self._table_name}] Update {self._model_name}#{self.pk} {key}: {orig_field} -> {value}"
+						f"[{self.table_name}] Update {self._model_name}#{self.pk} {key}: {orig_field} -> {value}"
 					)
 
 	def delete(self, field_name: str = None, field_value: Any = None):
@@ -313,49 +314,49 @@ class Model(metaclass=MetaModel):
 		"""
 		if field_name is not None and field_value is not None:
 			logger.info(
-				f"[{self._table_name}] Delete model by {field_name}={field_value}"
+				f"[{self.table_name}] Delete model by {field_name}={field_value}"
 			)
-			self.objects.delete(self._table_name, field_name, field_value)
+			self.objects.delete(self.table_name, field_name, field_value)
 			return
 
 		logger.info(
-			f'[{self._table_name}] Delete model {self._primary_key["field_name"]}={self.pk}'
+			f'[{self.table_name}] Delete model {self._primary_key["field_name"]}={self.pk}'
 		)
-		self.objects.delete(self._table_name, self._primary_key["field_name"], self.pk)
+		self.objects.delete(self.table_name, self._primary_key["field_name"], self.pk)
 		self.audit_manager.track_changes(
 			self._model_name,
-			self._table_name,
+			self.table_name,
 			self.pk,
-			self._table_name,
+			self.table_name,
 			self._model_name,
 			"<DELETED>",
 		)
-		self.last_action["type"] = "DELETE"
-		self.last_action["timestamp"] = datetime.now()
+		self._last_action["type"] = "DELETE"
+		self._last_action["timestamp"] = datetime.now()
 
 	def rollback_last_action(self):
 		"""
 		Rollback (revert) last action
 		"""
-		if not self.last_action:
+		if not self._last_action:
 			return
 
-		if self.last_action["type"] == "DELETE":
+		if self._last_action["type"] == "DELETE":
 			logger.info("Rollback last action: delete")
 			self.audit_manager.revert_changes(
 				self._model_name,
-				self._table_name,
+				self.table_name,
 				self.pk,
-				self._table_name,
-				self.last_action["timestamp"],
+				self.table_name,
+				self._last_action["timestamp"],
 			)
 			self.save()
-			self.last_action = {}
+			self._last_action = {}
 		else:
-			logger.error(f'Unknown last action type: {self.last_action["type"]}')
+			logger.error(f'Unknown last action type: {self._last_action["type"]}')
 			return
 
-	def _get_formatted_sql_fields(self) -> dict:
+	def get_formatted_sql_fields(self) -> dict:
 		"""
 		Gets the formatted sql fields.
 

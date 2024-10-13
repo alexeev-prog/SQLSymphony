@@ -15,10 +15,10 @@ class ChangeObserver(ABC):
 		"""
 		Called on change.
 
-		:param      audit_entry:          The audit entry
-		:type       audit_entry:          AuditEntry
+		:param		audit_entry:		  The audit entry
+		:type		audit_entry:		  AuditEntry
 
-		:raises     NotImplementedError:  abstract method
+		:raises		NotImplementedError:  abstract method
 		"""
 		raise NotImplementedError()
 
@@ -32,8 +32,8 @@ class BasicChangeObserver(ChangeObserver):
 		"""
 		Called on change.
 
-		:param      audit_entry:  The audit entry
-		:type       audit_entry:  AuditEntry
+		:param		audit_entry:  The audit entry
+		:type		audit_entry:  AuditEntry
 		"""
 		logger.debug(
 			f"{audit_entry.timestamp} [{audit_entry.model_name} {audit_entry.table_name} {audit_entry.object_id}] {audit_entry.field_name}: {audit_entry.old_value} -> {audit_entry.new_value}"
@@ -65,10 +65,10 @@ class AuditSubject(ABC):
 		"""
 		Attach observer
 
-		:param      observer:             The observer
-		:type       observer:             ChangeObserver
+		:param		observer:			  The observer
+		:type		observer:			  ChangeObserver
 
-		:raises     NotImplementedError:  abstract method
+		:raises		NotImplementedError:  abstract method
 		"""
 		raise NotImplementedError()
 
@@ -77,10 +77,10 @@ class AuditSubject(ABC):
 		"""
 		Detach observer
 
-		:param      observer:             The observer
-		:type       observer:             ChangeObserver
+		:param		observer:			  The observer
+		:type		observer:			  ChangeObserver
 
-		:raises     NotImplementedError:  abstract method
+		:raises		NotImplementedError:  abstract method
 		"""
 		raise NotImplementedError()
 
@@ -89,10 +89,10 @@ class AuditSubject(ABC):
 		"""
 		Notifies observers.
 
-		:param      audit_entry:          The audit entry
-		:type       audit_entry:          AuditEntry
+		:param		audit_entry:		  The audit entry
+		:type		audit_entry:		  AuditEntry
 
-		:raises     NotImplementedError:  abstract method
+		:raises		NotImplementedError:  abstract method
 		"""
 		raise NotImplementedError()
 
@@ -106,11 +106,11 @@ class AuditStorage(ABC):
 	def save_audit_entry(self, audit_entry: AuditEntry):
 		"""
 		Saves an audit entry.
-		
-		:param      audit_entry:          The audit entry
-		:type       audit_entry:          AuditEntry
-		
-		:raises     NotImplementedError:  abstract method
+
+		:param		audit_entry:		  The audit entry
+		:type		audit_entry:		  AuditEntry
+
+		:raises		NotImplementedError:  abstract method
 		"""
 		raise NotImplementedError()
 
@@ -121,17 +121,17 @@ class AuditStorage(ABC):
 		"""
 		Gets the audit history.
 
-		:param      model_name:           The model name
-		:type       model_name:           str
-		:param      table_name:           The table name
-		:type       table_name:           str
-		:param      object_id:            The object identifier
-		:type       object_id:            str
+		:param		model_name:			  The model name
+		:type		model_name:			  str
+		:param		table_name:			  The table name
+		:type		table_name:			  str
+		:param		object_id:			  The object identifier
+		:type		object_id:			  str
 
-		:returns:   The audit history.
-		:rtype:     List[AuditEntry]
+		:returns:	The audit history.
+		:rtype:		List[AuditEntry]
 
-		:raises     NotImplementedError:  abstract method
+		:raises		NotImplementedError:  abstract method
 		"""
 		raise NotImplementedError()
 
@@ -147,21 +147,21 @@ class AuditStorage(ABC):
 		"""
 		Revert changes
 
-		:param      model_name:           The model name
-		:type       model_name:           str
-		:param      table_name:           The table name
-		:type       table_name:           str
-		:param      object_id:            The object identifier
-		:type       object_id:            str
-		:param      field_name:           The field name
-		:type       field_name:           str
-		:param      timestamp:            The timestamp
-		:type       timestamp:            datetime
+		:param		model_name:			  The model name
+		:type		model_name:			  str
+		:param		table_name:			  The table name
+		:type		table_name:			  str
+		:param		object_id:			  The object identifier
+		:type		object_id:			  str
+		:param		field_name:			  The field name
+		:type		field_name:			  str
+		:param		timestamp:			  The timestamp
+		:type		timestamp:			  datetime
 
-		:returns:   reverted changes
-		:rtype:     Tuple[Optional[str], Optional[str]]
+		:returns:	reverted changes
+		:rtype:		Tuple[Optional[str], Optional[str]]
 
-		:raises     NotImplementedError:  abstract method
+		:raises		NotImplementedError:  abstract method
 		"""
 		raise NotImplementedError()
 
@@ -181,8 +181,8 @@ class InMemoryAuditStorage(AuditStorage):
 		"""
 		Saves an audit entry.
 
-		:param      audit_entry:  The audit entry
-		:type       audit_entry:  AuditEntry
+		:param		audit_entry:  The audit entry
+		:type		audit_entry:  AuditEntry
 		"""
 		self.audit_entries.append(audit_entry)
 
@@ -192,15 +192,15 @@ class InMemoryAuditStorage(AuditStorage):
 		"""
 		Gets the audit history.
 
-		:param      model_name:  The model name
-		:type       model_name:  str
-		:param      table_name:  The table name
-		:type       table_name:  str
-		:param      object_id:   The object identifier
-		:type       object_id:   str
+		:param		model_name:	 The model name
+		:type		model_name:	 str
+		:param		table_name:	 The table name
+		:type		table_name:	 str
+		:param		object_id:	 The object identifier
+		:type		object_id:	 str
 
-		:returns:   The audit history.
-		:rtype:     List[AuditEntry]
+		:returns:	The audit history.
+		:rtype:		List[AuditEntry]
 		"""
 		return [
 			entry
@@ -221,19 +221,19 @@ class InMemoryAuditStorage(AuditStorage):
 		"""
 		{ function_description }
 
-		:param      model_name:  The model name
-		:type       model_name:  str
-		:param      table_name:  The table name
-		:type       table_name:  str
-		:param      object_id:   The object identifier
-		:type       object_id:   str
-		:param      field_name:  The field name
-		:type       field_name:  str
-		:param      timestamp:   The timestamp
-		:type       timestamp:   datetime
+		:param		model_name:	 The model name
+		:type		model_name:	 str
+		:param		table_name:	 The table name
+		:type		table_name:	 str
+		:param		object_id:	 The object identifier
+		:type		object_id:	 str
+		:param		field_name:	 The field name
+		:type		field_name:	 str
+		:param		timestamp:	 The timestamp
+		:type		timestamp:	 datetime
 
-		:returns:   reverted changes
-		:rtype:     Tuple[Optional[str], Optional[str]]
+		:returns:	reverted changes
+		:rtype:		Tuple[Optional[str], Optional[str]]
 		"""
 		relevant_entries = [
 			entry
@@ -261,8 +261,8 @@ class AuditManager(AuditSubject):
 		"""
 		Constructs a new instance.
 
-		:param      audit_storage:  The audit storage
-		:type       audit_storage:  AuditStorage
+		:param		audit_storage:	The audit storage
+		:type		audit_storage:	AuditStorage
 		"""
 		self.audit_storage = audit_storage
 		self.observers: List[ChangeObserver] = []
@@ -271,8 +271,8 @@ class AuditManager(AuditSubject):
 		"""
 		Attach observer
 
-		:param      observer:  The observer
-		:type       observer:  ChangeObserver
+		:param		observer:  The observer
+		:type		observer:  ChangeObserver
 		"""
 		self.observers.append(observer)
 
@@ -280,8 +280,8 @@ class AuditManager(AuditSubject):
 		"""
 		Detach observer
 
-		:param      observer:  The observer
-		:type       observer:  ChangeObserver
+		:param		observer:  The observer
+		:type		observer:  ChangeObserver
 		"""
 		self.observers.remove(observer)
 
@@ -289,8 +289,8 @@ class AuditManager(AuditSubject):
 		"""
 		Notifies observers.
 
-		:param      audit_entry:  The audit entry
-		:type       audit_entry:  AuditEntry
+		:param		audit_entry:  The audit entry
+		:type		audit_entry:  AuditEntry
 		"""
 		for observer in self.observers:
 			observer.on_change(audit_entry)
@@ -307,18 +307,18 @@ class AuditManager(AuditSubject):
 		"""
 		Track changes
 
-		:param      model_name:  The model name
-		:type       model_name:  str
-		:param      table_name:  The table name
-		:type       table_name:  str
-		:param      object_id:   The object identifier
-		:type       object_id:   str
-		:param      field_name:  The field name
-		:type       field_name:  str
-		:param      old_value:   The old value
-		:type       old_value:   Optional[str]
-		:param      new_value:   The new value
-		:type       new_value:   Optional[str]
+		:param		model_name:	 The model name
+		:type		model_name:	 str
+		:param		table_name:	 The table name
+		:type		table_name:	 str
+		:param		object_id:	 The object identifier
+		:type		object_id:	 str
+		:param		field_name:	 The field name
+		:type		field_name:	 str
+		:param		old_value:	 The old value
+		:type		old_value:	 Optional[str]
+		:param		new_value:	 The new value
+		:type		new_value:	 Optional[str]
 		"""
 		audit_entry = AuditEntry(
 			model_name=model_name,
@@ -338,15 +338,15 @@ class AuditManager(AuditSubject):
 		"""
 		Gets the audit history.
 
-		:param      model_name:  The model name
-		:type       model_name:  str
-		:param      table_name:  The table name
-		:type       table_name:  str
-		:param      object_id:   The object identifier
-		:type       object_id:   str
+		:param		model_name:	 The model name
+		:type		model_name:	 str
+		:param		table_name:	 The table name
+		:type		table_name:	 str
+		:param		object_id:	 The object identifier
+		:type		object_id:	 str
 
-		:returns:   The audit history.
-		:rtype:     List[AuditEntry]
+		:returns:	The audit history.
+		:rtype:		List[AuditEntry]
 		"""
 		return self.audit_storage.get_audit_history(model_name, table_name, object_id)
 
@@ -361,19 +361,19 @@ class AuditManager(AuditSubject):
 		"""
 		Revert changes
 
-		:param      model_name:  The model name
-		:type       model_name:  str
-		:param      table_name:  The table name
-		:type       table_name:  str
-		:param      object_id:   The object identifier
-		:type       object_id:   str
-		:param      field_name:  The field name
-		:type       field_name:  str
-		:param      timestamp:   The timestamp
-		:type       timestamp:   datetime
+		:param		model_name:	 The model name
+		:type		model_name:	 str
+		:param		table_name:	 The table name
+		:type		table_name:	 str
+		:param		object_id:	 The object identifier
+		:type		object_id:	 str
+		:param		field_name:	 The field name
+		:type		field_name:	 str
+		:param		timestamp:	 The timestamp
+		:type		timestamp:	 datetime
 
-		:returns:   reverted changes
-		:rtype:     Tuple[Optional[str], Optional[str]]
+		:returns:	reverted changes
+		:rtype:		Tuple[Optional[str], Optional[str]]
 		"""
 		old_value, new_value = self.audit_storage.revert_changes(
 			model_name, table_name, object_id, field_name, timestamp

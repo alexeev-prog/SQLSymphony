@@ -1,15 +1,11 @@
 from abc import ABC, abstractmethod
-from enum import Enum
 from dataclasses import dataclass
 from typing import Any
 
 from rich.console import Console
 from rich.table import Table
 
-
-class ForeignFieldMods(Enum):
-	CASCADE = "CASCADE"
-	RESTRICT = "RESTRICT"
+from sqlsymphony_orm.utils.slugger import SlugGenerator
 
 
 class BaseDataType(ABC):
@@ -104,6 +100,120 @@ class BaseDataType(ABC):
 
 	def __str__(self):
 		return "<BaseDataType>"
+
+
+class SlugField(BaseDataType):
+	"""
+	This class describes a slug field.
+	"""
+
+	def __init__(
+		self,
+		max_length: int = 64,
+		primary_key: bool = False,
+		unique: bool = False,
+		null: bool = True,
+		default: Any = None,
+	):
+		"""
+		Constructs a new instance.
+
+		:param		primary_key:  The primary key
+		:type		primary_key:  bool
+		:param		unique:		  The unique
+		:type		unique:		  bool
+		:param		null:		  The null
+		:type		null:		  bool
+		:param		default:	  The default
+		:type		default:	  Any
+		"""
+		self.primary_key: bool = primary_key
+		self.unique: bool = unique
+		self.null: bool = null
+		self.default: Any = default
+
+		self.max_length = max_length
+
+		self.slug_generator = SlugGenerator()
+
+	def to_sql_type(self) -> str:
+		"""
+		Returns a sql type representation of the object.
+
+		:returns:	Sql type representation of the object.
+		:rtype:		str
+		"""
+		return f"VARCHAR({self.max_length})"
+
+	def validate(self, value: Any) -> bool:
+		"""
+		Validate value
+
+		:param		value:	The value
+		:type		value:	Any
+
+		:returns:	if the value is verified then True, otherwise False
+		:rtype:		bool
+		"""
+		if value is None and self.null:
+			return True
+
+		if not isinstance(value, str):
+			return False
+
+		return len(value) <= self.max_length
+
+	def to_db_value(self, value: Any) -> str:
+		"""
+		Convert value to db
+
+		:param		value:	The value
+		:type		value:	Any
+
+		:returns:	db value
+		:rtype:		str
+		"""
+		return (
+			str(self.slug_generator.generate_slug(value))
+			if value is not None
+			else self.default
+		)
+
+	def from_db_value(self, value: Any) -> str:
+		"""
+		Convert value from db
+
+		:param		value:	The value
+		:type		value:	Any
+
+		:returns:	db value
+		:rtype:		str
+		"""
+		return (
+			str(self.slug_generator.generate_slug(value))
+			if value is not None
+			else self.default
+		)
+
+	def view_table_info(self):
+		"""
+		View info in table view
+		"""
+		table = Table(title="SQLSymphonyORM SlagField (CharField)")
+		table.add_column("Parameters", style="blue")
+		table.add_column("Parameters values", style="green")
+
+		table.add_row("UNIQUE", str(self.unique))
+		table.add_row("NULL", str(self.null))
+		table.add_row("DEFAULT", str(self.default))
+		table.add_row("PRIMARY KEY", str(self.primary_key))
+		table.add_row("MAX LENGTH", str(self.max_length))
+
+		console = Console()
+		console.print(table)
+
+	def __str__(self):
+		return "<CharField>"
 
 
 @dataclass

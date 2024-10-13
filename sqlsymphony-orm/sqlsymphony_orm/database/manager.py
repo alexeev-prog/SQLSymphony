@@ -4,7 +4,6 @@ from loguru import logger
 
 from sqlsymphony_orm.queries import QueryBuilder
 from sqlsymphony_orm.database.connection import DBConnector, SQLiteDBConnector
-from sqlsymphony_orm.performance.cache import cached, SingletonCache, InMemoryCache
 
 
 class DatabaseSession(ABC):
@@ -16,8 +15,8 @@ class DatabaseSession(ABC):
 		"""
 		Constructs a new instance.
 
-		:param      connector:  The connector
-		:type       connector:  DBConnector
+		:param		connector:	The connector
+		:type		connector:	DBConnector
 		"""
 		self.connector = connector
 
@@ -26,10 +25,10 @@ class DatabaseSession(ABC):
 		"""
 		Enter to context manager
 
-		:returns:   database connector
-		:rtype:     DBConnector
+		:returns:	database connector
+		:rtype:		DBConnector
 		"""
-		self.logger.debug("Start DatabaseSession")
+		logger.debug("Start DatabaseSession")
 		return self.connector
 
 	@abstractmethod
@@ -37,7 +36,7 @@ class DatabaseSession(ABC):
 		"""
 		Exit from context manager
 		"""
-		self.logger.debug("Stop DatabaseSession")
+		logger.debug("Stop DatabaseSession")
 		self.connector.close_connection()
 
 
@@ -50,10 +49,10 @@ class SQLiteDatabaseSession(DatabaseSession):
 		"""
 		Constructs a new instance.
 
-		:param      connector:  The connector
-		:type       connector:  SQLiteDBConnector
-		:param      commit:     The commit
-		:type       commit:     bool
+		:param		connector:	The connector
+		:type		connector:	SQLiteDBConnector
+		:param		commit:		The commit
+		:type		commit:		bool
 		"""
 		self.connector = connector
 		self.commit = commit
@@ -62,8 +61,8 @@ class SQLiteDatabaseSession(DatabaseSession):
 		"""
 		Enter to context manager
 
-		:returns:   connector
-		:rtype:     SQLiteDBConnector
+		:returns:	connector
+		:rtype:		SQLiteDBConnector
 		"""
 		logger.info("Create SQLiteDatabaseSession")
 		return self.connector
@@ -72,9 +71,9 @@ class SQLiteDatabaseSession(DatabaseSession):
 		"""
 		Exit from context manager
 
-		:param      type:       The type
-		:param      value:      The value
-		:param      traceback:  The traceback
+		:param		type:		The type
+		:param		value:		The value
+		:param		traceback:	The traceback
 		"""
 		if self.commit:
 			logger.debug("Commit changes...")
@@ -156,12 +155,23 @@ class SQLiteModelManager(ModelManager):
 		if model_class._table_name != "model":
 			self._connector.connect(database_name)
 
+	def drop_table(self, table_name: str = None):
+		if table_name is None:
+			table_name = self.model_class._table_name
+
+		query = f"DROP TABLE IF EXISTS {table_name}"
+
+		logger.warning(f"Drop table: {table_name}")
+
+		self._connector.fetch(query)
+		self._connector.commit()
+
 	def insert(
 		self,
 		table_name: str,
-		columns: str,
-		count: str,
-		values: tuple,
+		formatted_fields: dict,
+		pk: int,
+		model_class: "Model",
 		ignore: bool = False,
 	):
 		"""
@@ -176,12 +186,29 @@ class SQLiteModelManager(ModelManager):
 		:param		values:		 The values
 		:type		values:		 tuple
 		"""
+		fields = []
+		values = []
+
+		for k, v in formatted_fields.items():
+			fields.append(k)
+			if "PRIMARY KEY" in v:
+				values.append(pk)
+			else:
+				values.append(getattr(model_class, k))
+
+		columns = ", ".join(fields)
+		count = ", ".join(["?" for _ in values])
+
 		query = "INSERT "
 
 		if ignore:
 			query += "OR IGNORE "
 
 		query += f"INTO {table_name} ({columns}) VALUES ({count})"
+
+		logger.info(
+			f'[{table_name}] Insert {"(or ignore)" if ignore else ""} new model into database'
+		)
 
 		self._connector.fetch(query, values)
 
@@ -200,10 +227,11 @@ class SQLiteModelManager(ModelManager):
 		"""
 		query = f"UPDATE {table_name} SET {key} = ? WHERE {key} = ?"
 
+		logger.info(f"[{table_name}] Update model: {key}={new_value}")
+
 		self._connector.fetch(query, (new_value, orig_field))
 
-	@cached(SingletonCache(InMemoryCache, max_size=1000, ttl=60))
-	def filter(self, *args, **kwargs) -> list:
+	def filter(self, first: bool = False, *args, **kwargs) -> list:
 		"""
 		Filter models (WHERE sql query)
 
@@ -216,7 +244,13 @@ class SQLiteModelManager(ModelManager):
 		:rtype:		list
 		"""
 		self.q = self.q.WHERE(*args, **kwargs)
-		return self.fetch()
+
+		result = self.fetch()
+
+		if first and result:
+			return result[0]
+		else:
+			return result
 
 	def commit(self):
 		"""
@@ -260,10 +294,10 @@ class SQLiteModelManager(ModelManager):
 		:type		field_value:  Any
 		"""
 		query = f"DELETE FROM {table_name} WHERE {field_name} = ?"
+		logger.info(f"[{table_name}] Delete model ({field_name}={field_value})")
 
 		self._connector.fetch(query, (field_value,))
 
-	@cached(SingletonCache(InMemoryCache, max_size=1000, ttl=60))
 	def fetch(self) -> list:
 		"""
 		Fetches the object.
@@ -274,11 +308,6 @@ class SQLiteModelManager(ModelManager):
 		q = str(self.q)
 		db_results = self._connector.fetch(q)
 
-		self.q = (
-			QueryBuilder()
-			.SELECT(*self._model_fields)
-			.FROM(self.model_class._table_name)
-		)
 		results = []
 
 		for row in db_results:
@@ -289,4 +318,88 @@ class SQLiteModelManager(ModelManager):
 
 			results.append(model)
 
+		self.q = (
+			QueryBuilder()
+			.SELECT(*self._model_fields)
+			.FROM(self.model_class._table_name)
+		)
+
 		return results
+
+
+class MultiModelManager(ABC):
+	def __init__(self, database_name: str):
+		self.models = {}
+		self.database_name = database_name
+
+	@abstractmethod
+	def add_model(self, model: "Model"):
+		self.models[model._model_name] = {
+			"model": model,
+			"manager": ModelManager(model, self.database_name),
+		}
+
+	@abstractmethod
+	def remove_model_by_name(self, model_name: str):
+		try:
+			del self.models[model_name]
+		except KeyError:
+			logger.error(f'Not found model "{model_name}"')
+
+	@abstractmethod
+	def model_manager(self, model_name: str):
+		model = self.models.get(model_name, None)
+
+		if model is None:
+			logger.error(f'Not found model "{model_name}"')
+			return
+
+		return model["manager"]
+
+	@abstractmethod
+	def model(self, model_name: str):
+		model = self.models.get(model_name, None)
+
+		if model is None:
+			logger.error(f'Not found model "{model_name}"')
+			return
+
+		return model["model"]
+
+
+class SQLiteMultiModelManager(MultiModelManager):
+	def __init__(self, database_name: str):
+		self.models = {}
+		self.database_name = database_name
+
+	def add_model(self, model: "Model"):
+		logger.info(f"[SQLiteMultiModelManager] New model added: {model._model_name}")
+		self.models[model._model_name] = {
+			"model": model,
+			"manager": SQLiteModelManager(model, self.database_name),
+		}
+
+	def remove_model_by_name(self, model_name: str):
+		logger.info(f"[SQLiteMultiModelManager] Remove model: {model_name}")
+		try:
+			del self.models[model_name]
+		except KeyError:
+			logger.error(f'Not found model "{model_name}"')
+
+	def model_manager(self, model_name: str):
+		model = self.models.get(model_name, None)
+
+		if model is None:
+			logger.error(f'Not found model "{model_name}"')
+			return
+
+		return model["manager"]
+
+	def model(self, model_name: str):
+		model = self.models.get(model_name, None)
+
+		if model is None:
+			logger.error(f'Not found model "{model_name}"')
+			return
+
+		return model["model"]

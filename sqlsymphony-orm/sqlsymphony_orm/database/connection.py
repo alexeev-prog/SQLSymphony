@@ -6,8 +6,6 @@ from rich import print
 
 from loguru import logger
 
-from sqlsymphony_orm.exceptions import UniqueConstraintError
-
 
 class DBConnector(ABC):
 	"""
@@ -140,13 +138,6 @@ class SQLiteDBConnector(DBConnector):
 
 		try:
 			cursor.execute(query, values)
-		except sqlite3.IntegrityError as ex:
-			try:
-				if str(ex).split(":")[0] == "UNIQUE constraint failed":
-					raise UniqueConstraintError("Problems with UNIQUE field")
-			except KeyError:
-				logger.error(f"An exception occurred while executing the request: {ex}")
-				raise ex
 		except Exception as ex:
 			logger.error(f"An exception occurred while executing the request: {ex}")
 			raise ex

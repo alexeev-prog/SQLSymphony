@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sqlsymphony-orm"
-version = "0.2.8"
+version = "0.2.9"
 description = "The elegant and powerful SQLite3 ORM for Python"
 authors = ["alexeev-prog <dev.alexeev@mail.ru>"]
 readme = "README.md"
@@ -11,6 +11,7 @@ rich = "^13.9.2"
 ruff = "^0.6.9"
 pycolor-palette-loguru = "^0.1.4"
 loguru = "^0.7.2"
+pydantic = "^2.9.2"
 
 [build-system]
 requires = ["poetry-core"]

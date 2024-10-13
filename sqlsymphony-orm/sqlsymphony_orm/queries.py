@@ -3,6 +3,7 @@ from rich.console import Console
 from rich.table import Table
 from loguru import logger
 from sqlsymphony_orm.performance.cache import cached, SingletonCache, InMemoryCache
+from sqlsymphony_orm.database.connection import DBConnector
 
 AND = "and"
 OR = "or"
@@ -357,3 +358,16 @@ def raw_sql_query(connector: "DBConnector" = None, values: tuple = ()):
 		return wrapper
 
 	return actual_decorator
+
+
+class QueryExecutor:
+	def __init__(self, db_connector: DBConnector, database_file: str):
+		self.connector = db_connector
+		self.connector.connect(database_file)
+
+	def execute(self, query: QueryBuilder):
+		q = str(query)
+
+		db_results = self.connector.fetch(q)
+
+		return db_results

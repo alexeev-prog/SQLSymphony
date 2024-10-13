@@ -98,67 +98,47 @@ Once installed, you can start using the library in your Python projects. Check o
 ### Creating a Model
 
 ```python
-from sqlsymphony_orm.datatypes.fields import IntegerField, CharField, TextField
+from sqlsymphony_orm.datatypes.fields import IntegerField, CharField, RealField, TextField, SlugField
 from sqlsymphony_orm.models.orm_models import Model
-from sqlsymphony_orm.database.manager import SQLiteDatabaseSession
-from sqlsymphony_orm.database.connection import SQLiteDBConnector
+from sqlsymphony_orm.database.manager import SQLiteMultiModelManager
 
 
-class Video(Model):
-	__tablename__ = "Videos"
-	__database__ = "videos.db"
-
-	id = IntegerField(primary_key=True)
-	author = CharField(max_length=32)
-	title = CharField(max_length=64, null=False)
-	description = TextField(null=False)
-	views = IntegerField(null=False, default=0)
-
-	def __repr__(self):
-		return f"<Video {self.id} {self.title}>"
-
-
-class Comment(Model):
-	__tablename__ = "Comments"
-	__database__ = "videos.db"
+class BankAccount(Model):
+	__tablename__ = 'BankAccounts'
+	__database__ = 'bank.db'
 
 	id = IntegerField(primary_key=True)
-	video = IntegerField(null=False)
+	name = TextField(null=False)
+	cash = RealField(null=False, default=0.0)
 
 	def __repr__(self):
-		return f"<Comment {self.id} {self.video}>"
+		return f'<BankAccount {self.id}>'
 
 
-# Simple hook
-def hello():
-	print("hello")
+account = BankAccount(name='John', cash=100.0)
+account2 = BankAccount(name='Bob', cash=100000000.0)
+account2.save()
+account2.commit()
+account.save()
+account.commit()
 
+cash = float(input('Enter sum: '))
+account.update(cash=account.cash + cash)
+account.commit()
+account2.update(cash=account2.cash - cash)
+account2.commit()
 
-video = Video(
-	author="Alexeev",
-	title="How to make your own ORM in python",
-	description="Big video about python coding",
-)
-video.save(ignore=True)
-video.commit()
+print(account.cash, account2.cash)
+print(BankAccount.objects.fetch())
+print(BankAccount.objects.filter(name="Bob", first=True))
 
-video2 = Video(author="Alexeev", title="Test", description="An another video", views=1)
-video2.save(ignore=True)
-video2.commit()
-video2.update(views=102)
-video2.delete()
-video2.commit()
-video2.rollback_last_action()
-video2.commit()
+BankAccount.objects.drop_table()
 
-comment = Comment(video=video2.pk)
-comment.add_hook("save", hello) # register hook (exec before sql query exec)
-comment.save(ignore=True)
-comment.commit()
-
-print(video.objects.fetch())
-print(comment.objects.fetch())
-print(video2.get_audit_history())
+mm_manager = SQLiteMultiModelManager('database.db')
+mm_manager.add_model(account)
+mm_manager.model_manager(account._model_name).create_table(account._table_name, account.get_formatted_sql_fields())
+mm_manager.model_manager(account._model_name).insert(account._table_name, account.get_formatted_sql_fields(), account.pk, account)
+mm_manager.model_manager(account._model_name).commit()
 ```
 
 <details>
@@ -211,6 +191,79 @@ with SQLiteDatabaseSession(connector, commit=True) as session:
 	session.fetch(
 		"CREATE TABLE IF NOT EXISTS BALABOLA (id INTEGER PRIMARY KEY, name VarChar(32))"
 	)
+```	
+
+</details>
+
+<details>
+<summary>MultiModel Manager</summary>
+
+```python
+from sqlsymphony_orm.datatypes.fields import IntegerField, CharField, RealField, TextField, SlugField
+from sqlsymphony_orm.models.orm_models import Model
+from sqlsymphony_orm.database.manager import SQLiteMultiModelManager
+
+
+class BankAccount(Model):
+	__tablename__ = 'BankAccounts'
+	__database__ = 'bank.db'
+
+	id = IntegerField(primary_key=True)
+	name = TextField(null=False)
+	cash = RealField(null=False, default=0.0)
+
+	def __repr__(self):
+		return f'<BankAccount {self.id}>'
+
+account = BankAccount(name="John", cash=100.0)
+
+mm_manager = SQLiteMultiModelManager('database.db')
+mm_manager.add_model(account)
+mm_manager.model_manager(account._model_name).create_table(account._table_name, account.get_formatted_sql_fields())
+mm_manager.model_manager(account._model_name).insert(account._table_name, account.get_formatted_sql_fields(), account.pk, account)
+mm_manager.model_manager(account._model_name).commit()
+```	
+
+</details>
+
+<details>
+<summary>Drop table</summary>
+
+```python
+from sqlsymphony_orm.datatypes.fields import IntegerField, CharField, RealField, TextField, SlugField
+from sqlsymphony_orm.models.orm_models import Model
+
+
+class BankAccount(Model):
+	__tablename__ = 'BankAccounts'
+	__database__ = 'bank.db'
+
+	id = IntegerField(primary_key=True)
+	name = TextField(null=False)
+	cash = RealField(null=False, default=0.0)
+
+	def __repr__(self):
+		return f'<BankAccount {self.id}>'
+
+
+account = BankAccount(name='John', cash=100.0)
+account2 = BankAccount(name='Bob', cash=100000000.0)
+account2.save()
+account2.commit()
+account.save()
+account.commit()
+
+cash = float(input('Enter sum: '))
+account.update(cash=account.cash + cash)
+account.commit()
+account2.update(cash=account2.cash - cash)
+account2.commit()
+
+print(account.cash, account2.cash)
+print(BankAccount.objects.fetch())
+print(BankAccount.objects.filter(name="Bob", first=True))
+
+BankAccount.objects.drop_table()
 ```	
 
 </details>
@@ -307,11 +360,57 @@ print(user.objects.filter(name="Bobby"))
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## 🤝 Contributing
+## 🔧 Specifications
 
-We welcome contributions from the community! If you'd like to help improve SqlSymphony, please check out the [contributing guidelines](https://github.com/alexeev-prog/SqlSymphony/blob/main/CONTRIBUTING.md) to get started.
+### Model Specification
+The Model class is needed to create a model. It acts as an element in the database and allows, through the objects subclass, to manage other objects of the class through the object.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+#### Self Variables
+Model has some global variables that are needed to configure database fields:
+
+ + `__tablename__` - table name
+ + `__database__` - database filepath
+ + `__type__` - type of database. Default: `ModelManagerType.SQLITE3`.
+ + `_ids` - the value from which the primary key calculation begins
+
+The model also has the following parameters, which are set at the stage of creating a class object:
+
+ + `table_name` - same as `__tablename__`
+ + `database_name` - same as `__database_name__`
+ + `model_name` - class model name. if `__tablename__` or `__database__` are None, then their value is changed to the class model name.
+ + `_original_fields` - dictionary with original fields. The dictionary looks like this: `'<field name>'='<field class>'`
+ + `objects` - an `ModelManager` instance. Example, if `__type__` is `ModelManagerType.SQLITE3`, `SQLiteModelManager`.
+ + `fields` - fields dictionary.
+ + `_hooks` - a pre-action simple hooks dictionary.
+ + `audit_manager` - an audit manager instance.
+ + `unique_id` - an UUID4 of instance.
+ + `_last_action` - dictionary storing the last action.
+
+#### Methods
+Model has some methods and functions for interactions with database:
+
+ + `pk` (property) - a primary key value.
+ + `commit()` - method for commit changes to database.
+ + `get_audit_history()` - return audit history list.
+ + `view_table_info()` - print beautiful table with some info about model
+ + `add_hook(before_action: str, func: Callable, func_args: tuple = ())` - add a hook.
+ + `save(ignore: bool = False)` - insert model to database.
+ + `update(**kwargs)` - update any value of model.
+ + `delete(field_name: str = None, field_value: Any = None)` - delete self model or delete model by field name and value.
+ + `rollback_last_action()` - revert last changes (one action)
+ + `get_formatted_sql_fields()` - return an dictionary with formatted fields for sql query (ex. insert)
+
+#### Objects Instance
+Below you can see the methods belonging to the objects instance. Through it you can manage this and other instances of the model:
+
+ + `objects.drop_table(table_name: str=None)` - drop table. If table_name is None, drop current model table, if table_name is not None, drop table by name.
+ + `insert(table_name: str, formatted_fields: dict, pk: int, model_class: 'Model', ignore: bool = False)` - insert fields by model.
+ + `update(table_name: str, key: str, orig_field: str, new_value: str)` - update element in database.
+ + `filter(first: bool=False, *args, **kwargs)` - filter and get model by kwargs.
+ + `commit()` - commit changes.
+ + `create_table(table_name: str, fields: dict)` - create table.
+ + `delete(table_name: str, field_name: str, field_value: Any)` - delete element from database.
+ + `fetch()` - fetch last query and return fetched result.
 
 ## 💬 Support
 
@@ -323,11 +422,9 @@ If you encounter any issues or have questions about SqlSymphony, please:
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## ☑️ Todos
- 
- + Create Migrations system and Migrations Manager
- + Create ForeignKey field
- + Create RelationShip
+## 🤝 Contributing
+
+We welcome contributions from the community! If you'd like to help improve SqlSymphony, please check out the [contributing guidelines](https://github.com/alexeev-prog/SqlSymphony/blob/main/CONTRIBUTING.md) to get started.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -342,6 +439,10 @@ Our future goals for SqlSymphony include:
 - 🔧 Implementing advanced querying capabilities
 - 🚀 Add asynchronous operation mode
 - ☑️ Add more fields
+- ✈️ Create Migrations system and Migrations Manager
+- ⌨️ Create ForeignKey field
+- ⌨️ Create RelationShip
+- 🖇️ Create more query-get methods
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
