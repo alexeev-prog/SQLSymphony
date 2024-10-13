@@ -1,3 +1,15 @@
+commit 45be6c5fabace309461358ac9a9dd982c06df01f
+Author: alexeev-prog <alexeev.dev@mail.ru>
+Date:   Sun Oct 13 18:43:54 2024 +0700
+
+    feat/docs: improve docs, create MultiModelManager, create slug generator
+
+commit 267f0e09188aac7f864955a11402f712306820da
+Author: alexeev-prog <alexeev.dev@mail.ru>
+Date:   Sun Oct 13 00:22:47 2024 +0700
+
+    docs: improve docs
+
 commit c50edfcf676685c44f374373f69d9d0349f736d3
 Author: alexeev-prog <alexeev.dev@mail.ru>
 Date:   Sat Oct 12 23:51:04 2024 +0700

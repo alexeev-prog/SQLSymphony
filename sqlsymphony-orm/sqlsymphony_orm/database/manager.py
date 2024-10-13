@@ -328,12 +328,28 @@ class SQLiteModelManager(ModelManager):
 
 
 class MultiModelManager(ABC):
+	"""
+	This class describes a multi model manager.
+	"""
+
 	def __init__(self, database_name: str):
+		"""
+		Constructs a new instance.
+
+		:param		database_name:	The database name
+		:type		database_name:	str
+		"""
 		self.models = {}
 		self.database_name = database_name
 
 	@abstractmethod
 	def add_model(self, model: "Model"):
+		"""
+		Adds a model.
+
+		:param		model:	The model
+		:type		model:	Model
+		"""
 		self.models[model._model_name] = {
 			"model": model,
 			"manager": ModelManager(model, self.database_name),
@@ -341,13 +357,28 @@ class MultiModelManager(ABC):
 
 	@abstractmethod
 	def remove_model_by_name(self, model_name: str):
+		"""
+		Removes a model by name.
+
+		:param		model_name:	 The model name
+		:type		model_name:	 str
+		"""
 		try:
 			del self.models[model_name]
 		except KeyError:
 			logger.error(f'Not found model "{model_name}"')
 
 	@abstractmethod
-	def model_manager(self, model_name: str):
+	def model_manager(self, model_name: str) -> "ModelManager":
+		"""
+		Get model manager
+
+		:param		model_name:	 The model name
+		:type		model_name:	 str
+
+		:returns:	Model manager
+		:rtype:		ModelManager
+		"""
 		model = self.models.get(model_name, None)
 
 		if model is None:
@@ -357,7 +388,16 @@ class MultiModelManager(ABC):
 		return model["manager"]
 
 	@abstractmethod
-	def model(self, model_name: str):
+	def model(self, model_name: str) -> "Model":
+		"""
+		Model
+
+		:param		model_name:	 The model name
+		:type		model_name:	 str
+
+		:returns:	Model
+		:rtype:		Model
+		"""
 		model = self.models.get(model_name, None)
 
 		if model is None:
@@ -368,11 +408,27 @@ class MultiModelManager(ABC):
 
 
 class SQLiteMultiModelManager(MultiModelManager):
+	"""
+	This class describes a sq lite multi model manager.
+	"""
+
 	def __init__(self, database_name: str):
+		"""
+		Constructs a new instance.
+
+		:param		database_name:	The database name
+		:type		database_name:	str
+		"""
 		self.models = {}
 		self.database_name = database_name
 
 	def add_model(self, model: "Model"):
+		"""
+		Adds a model.
+
+		:param		model:	The model
+		:type		model:	Model
+		"""
 		logger.info(f"[SQLiteMultiModelManager] New model added: {model._model_name}")
 		self.models[model._model_name] = {
 			"model": model,
@@ -380,13 +436,28 @@ class SQLiteMultiModelManager(MultiModelManager):
 		}
 
 	def remove_model_by_name(self, model_name: str):
+		"""
+		Removes a model by name.
+
+		:param		model_name:	 The model name
+		:type		model_name:	 str
+		"""
 		logger.info(f"[SQLiteMultiModelManager] Remove model: {model_name}")
 		try:
 			del self.models[model_name]
 		except KeyError:
 			logger.error(f'Not found model "{model_name}"')
 
-	def model_manager(self, model_name: str):
+	def model_manager(self, model_name: str) -> "ModelManager":
+		"""
+		Get model manager
+
+		:param		model_name:	 The model name
+		:type		model_name:	 str
+
+		:returns:	Model manager
+		:rtype:		ModelManager
+		"""
 		model = self.models.get(model_name, None)
 
 		if model is None:
@@ -395,7 +466,16 @@ class SQLiteMultiModelManager(MultiModelManager):
 
 		return model["manager"]
 
-	def model(self, model_name: str):
+	def model(self, model_name: str) -> "Model":
+		"""
+		Get model
+
+		:param		model_name:	 The model name
+		:type		model_name:	 str
+
+		:returns:	Model
+		:rtype:		Model
+		"""
 		model = self.models.get(model_name, None)
 
 		if model is None:

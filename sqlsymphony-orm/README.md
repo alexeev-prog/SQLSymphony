@@ -19,6 +19,8 @@
     ·
     <a href="#-usage-examples">Basic Usage</a>
     ·
+    <a href="#-specifications">Specification</a>
+    ·
     <a href="https://alexeev-prog.github.io/SQLSymphony/">Documentation</a>
     ·
     <a href="https://github.com/alexeev-prog/SQLSymphony/blob/main/LICENSE">License</a>
