@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Any, Union
+from typing import List, Any, Union, Callable
 from uuid import uuid4
 from abc import ABC, abstractmethod
 from collections import OrderedDict
@@ -83,6 +83,7 @@ class SessionModel(metaclass=MetaSessionModel):
 		:type		kwargs:	 dictionary
 		"""
 		self.fields = {}
+		self.hooks = {}
 
 		self.unique_id = str(uuid4())
 
@@ -129,6 +130,32 @@ class SessionModel(metaclass=MetaSessionModel):
 			raise PrimaryKeyError()
 
 		self._last_action = {}
+
+	def add_hook(self, before_action: str, func: Callable, func_args: tuple = ()):
+		"""
+		Adds a hook.
+
+		:param		before_action:	The before action
+		:type		before_action:	str
+		:param		func:			The function
+		:type		func:			Callable
+		:param		func_args:		The function arguments
+		:type		func_args:		tuple
+
+		:raises		ValueError:		unknown before action
+		"""
+		actions = ["save", "delete", "update"]
+
+		if before_action.lower() not in actions:
+			raise ValueError(
+				f"Unknown action: {before_action}. Supported actions: {actions}"
+			)
+
+		logger.info(
+			f"[{self.table_name}] Add Model Hook: before {before_action} execute {func.__name__}"
+		)
+
+		self.hooks[before_action.lower()] = {"function": func, "args": func_args}
 
 	@property
 	def pk(self) -> Any:
@@ -316,6 +343,7 @@ class SQLiteSession(Session):
 		"""
 		Reconnecto to database
 		"""
+		logger.info(f"Session {self.database_file}: reconnect")
 		self.manager.reconnect()
 
 	def get_all(self) -> List[SessionModel]:
@@ -355,6 +383,7 @@ class SQLiteSession(Session):
 		:param		table_name:	 The table name
 		:type		table_name:	 str
 		"""
+		logger.info(f"Session {self.database_file}: drop table {table_name}")
 		self.manager.drop_table(table_name)
 
 	def filter(
@@ -409,6 +438,13 @@ class SQLiteSession(Session):
 		if current_model is None:
 			self.add(model)
 
+		logger.info(f"Session {self.database_file}: update model {model.unique_id}")
+
+		if model.hooks:
+			func = model.hooks["update"]["function"]
+			logger.debug(f"Exec Model Hook[update]: {func.__name__}")
+			func(*model.hooks["update"]["args"])
+
 		for key, value in kwargs.items():
 			if hasattr(model, key):
 				if value is not None and model._original_fields[key].validate(value):
@@ -450,6 +486,11 @@ class SQLiteSession(Session):
 			logger.warning(f"Model {model.unique_id} already added")
 			return
 
+		if model.hooks:
+			func = model.hooks["save"]["function"]
+			logger.debug(f"Exec Model Hook[save]: {func.__name__}")
+			func(*model.hooks["save"]["args"])
+
 		self.models[model.unique_id] = {"model": model}
 
 		self.audit_manager.track_changes(
@@ -465,6 +506,9 @@ class SQLiteSession(Session):
 		self.manager.insert(
 			model.table_name, model.get_formatted_sql_fields(), model.pk, model, ignore
 		)
+		logger.info(
+			f"Session {self.database_file}: insert new model: {model.unique_id}"
+		)
 
 	def delete(self, model: SessionModel):
 		"""
@@ -478,6 +522,11 @@ class SQLiteSession(Session):
 		if current_model is None:
 			logger.error(f"Model {model.unique_id} does not exists")
 			return
+
+		if model.hooks:
+			func = model.hooks["delete"]["function"]
+			logger.debug(f"Exec Model Hook[delete]: {func.__name__}")
+			func(*model.hooks["delete"]["args"])
 
 		self.audit_manager.track_changes(
 			current_model["model"]._model_name,
@@ -494,16 +543,16 @@ class SQLiteSession(Session):
 			current_model["model"].pk,
 		)
 
+		logger.info(f"Session {self.database_file}: delete model: {model.unique_id}")
+
 	def commit(self):
 		"""
 		Commit changes
 		"""
-		for _, model in self.models.items():
-			self.manager.commit()
+		self.manager.commit()
 
 	def close(self):
 		"""
 		Close connection
 		"""
-		for _, model in self.models.items():
-			self.manager.close_connection()
+		self.manager.close_connection()

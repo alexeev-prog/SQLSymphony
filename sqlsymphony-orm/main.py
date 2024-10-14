@@ -1,6 +1,9 @@
 from sqlsymphony_orm.datatypes.fields import IntegerField, RealField, TextField
 from sqlsymphony_orm.models.orm_models import Model
 from sqlsymphony_orm.database.manager import SQLiteMultiModelManager
+from time import time
+
+start = time()
 
 
 class BankAccount(Model):
@@ -22,7 +25,7 @@ account2.commit()
 account.save()
 account.commit()
 
-cash = float(input("Enter sum: "))
+cash = float(100)
 account.update(cash=account.cash + cash)
 account.commit()
 account2.update(cash=account2.cash - cash)
@@ -43,3 +46,9 @@ mm_manager.model_manager(account._model_name).insert(
 	account.table_name, account.get_formatted_sql_fields(), account.pk, account
 )
 mm_manager.model_manager(account._model_name).commit()
+
+end = time()
+
+total = round(end - start, 2)
+
+print(f"Execution time: {total}s")

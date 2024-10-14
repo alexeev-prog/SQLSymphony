@@ -96,6 +96,14 @@ class BaseDataType(ABC):
 
 	@abstractmethod
 	def to_sql_type(self) -> str:
+		"""
+		Returns a sql type representation of the object.
+
+		:returns:	Sql type representation of the object.
+		:rtype:		str
+
+		:raises		NotImplementedError:  abstract method
+		"""
 		raise NotImplementedError()
 
 	def __str__(self):
@@ -341,7 +349,6 @@ class RealField(BaseDataType):
 		self,
 		min_value: float = None,
 		max_value: float = None,
-		primary_key: bool = False,
 		unique: bool = False,
 		null: bool = True,
 		default: float = None,
@@ -358,7 +365,7 @@ class RealField(BaseDataType):
 		:param		default:	  The default
 		:type		default:	  float
 		"""
-		self.primary_key = primary_key
+		self.primary_key = False
 		self.unique: bool = unique
 		self.null: bool = null
 		self.default: float = default
@@ -444,7 +451,6 @@ class CharField(BaseDataType):
 	def __init__(
 		self,
 		max_length: int = 64,
-		primary_key: bool = False,
 		unique: bool = False,
 		null: bool = True,
 		default: Any = None,
@@ -461,7 +467,7 @@ class CharField(BaseDataType):
 		:param		default:	  The default
 		:type		default:	  Any
 		"""
-		self.primary_key: bool = primary_key
+		self.primary_key: bool = False
 		self.unique: bool = unique
 		self.null: bool = null
 		self.default: Any = default
@@ -534,14 +540,13 @@ class CharField(BaseDataType):
 		return "<CharField>"
 
 
-class TextField(BaseDataType):
+class BooleanField(BaseDataType):
 	"""
-	This class describes a character field.
+	This class describes a boolean field.
 	"""
 
 	def __init__(
 		self,
-		primary_key: bool = False,
 		unique: bool = False,
 		null: bool = True,
 		default: Any = None,
@@ -558,7 +563,96 @@ class TextField(BaseDataType):
 		:param		default:	  The default
 		:type		default:	  Any
 		"""
-		self.primary_key = primary_key
+		self.primary_key = False
+		self.unique: bool = unique
+		self.null: bool = null
+		self.default: Any = default
+
+	def to_sql_type(self) -> str:
+		return "BOOLEAN"
+
+	def validate(self, value: Any) -> bool:
+		"""
+		Validate value
+
+		:param		value:	The value
+		:type		value:	Any
+
+		:returns:	if the value is verified then True, otherwise False
+		:rtype:		bool
+		"""
+		if isinstance(value, bool):
+			return True
+		else:
+			return False
+
+	def to_db_value(self, value: Any) -> str:
+		"""
+		Convert to db value
+
+		:param		value:	The value
+		:type		value:	Any
+
+		:returns:	db value
+		:rtype:		str
+		"""
+		return str(value).upper() if value is not None else self.default
+
+	def from_db_value(self, value: Any) -> str:
+		"""
+		Convert from db value
+
+		:param		value:	The value
+		:type		value:	Any
+
+		:returns:	db value
+		:rtype:		str
+		"""
+		return str(value).upper() if value is not None else self.default
+
+	def view_table_info(self):
+		"""
+		View info in table view
+		"""
+		table = Table(title="SQLSymphonyORM TextField")
+		table.add_column("Parameters", style="blue")
+		table.add_column("Parameters values", style="green")
+
+		table.add_row("UNIQUE", str(self.unique))
+		table.add_row("NULL", str(self.null))
+		table.add_row("DEFAULT", str(self.default))
+
+		console = Console()
+		console.print(table)
+
+	def __str__(self):
+		return "<BooleanField>"
+
+
+class TextField(BaseDataType):
+	"""
+	This class describes a character field.
+	"""
+
+	def __init__(
+		self,
+		unique: bool = False,
+		null: bool = True,
+		default: Any = None,
+	):
+		"""
+		Constructs a new instance.
+
+		:param		primary_key:  The primary key
+		:type		primary_key:  bool
+		:param		unique:		  The unique
+		:type		unique:		  bool
+		:param		null:		  The null
+		:type		null:		  bool
+		:param		default:	  The default
+		:type		default:	  Any
+		"""
+		self.primary_key = False
 		self.unique: bool = unique
 		self.null: bool = null
 		self.default: Any = default
@@ -634,7 +728,6 @@ class BlobField(BaseDataType):
 	def __init__(
 		self,
 		max_size_in_bytes: int = None,
-		primary_key: bool = False,
 		unique: bool = False,
 		null: bool = True,
 		default: Any = None,
@@ -651,7 +744,7 @@ class BlobField(BaseDataType):
 		:param		default:	  The default
 		:type		default:	  Any
 		"""
-		self.primary_key = primary_key
+		self.primary_key = False
 		self.unique: bool = unique
 		self.null: bool = null
 		self.default: Any = default

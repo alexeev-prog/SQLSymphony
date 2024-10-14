@@ -95,7 +95,9 @@ Once installed, you can start using the library in your Python projects. Check o
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## 💻 Usage Examples
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+### Fields
+![fields](https://github.com/alexeev-prog/SQLSymphony/raw/refs/heads/main/docs/img/fields.png)
 
 ### Basic Features
 <details>
@@ -536,6 +538,14 @@ print(user.objects.filter(name="Bobby"))
 
 ## 🔧 Specifications
 
+![speed](https://github.com/alexeev-prog/SQLSymphony/raw/refs/heads/main/docs/img/speed.png)
+
+Database attractions speed top:
+
+1. Raw SQL Query 
+2. Sessions Method
+3. Models Method
+
 ### Session Specification
 Session Models are a new, recommended way to work with models and the database. This method is suitable for more complex projects. If you have a light project, it is better to use <a href='#model-specification'>regular Models</a>.
 
@@ -555,6 +565,7 @@ The session model also has the following parameters, which are set at the stage 
  + `_original_fields` - dictionary with original fields. The dictionary looks like this: `'<field name>'='<field class>'`
  + `fields` - fields dictionary.
  + `unique_id` - an UUID4 of instance.
+ + `_hooks` - a pre-action simple hooks dictionary.
  + `_last_action` - dictionary storing the last action.
 
 ##### Methods
@@ -585,9 +596,9 @@ Session has some methods and functions for interactions with database:
  + `update(self, model: SessionModel, **kwargs)` - update model.
  + `add(self, model: SessionModel, ignore: bool=False)` - add (with `OR IGNORE` sql prefix if ignore is True) new model.
  + `delete(self, model: SessionModel)` - delete model.
- + `commit` - commit changes.
- + `close` - close connection.
- + `reconnect` - reconnect to database.
+ + `commit()` - commit changes.
+ + `close()` - close connection.
+ + `reconnect()` - reconnect to database.
 
 ### Model Specification
 The Model class is needed to create a model. It acts as an element in the database and allows, through the objects subclass, to manage other objects of the class through the object.

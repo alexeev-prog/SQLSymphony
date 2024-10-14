@@ -487,16 +487,38 @@ class SQLiteMultiModelManager(MultiModelManager):
 
 
 class MultiManager(ABC):
+	"""
+	This class describes a multi manager.
+	"""
+
 	@abstractmethod
 	def reconnect(self):
+		"""
+		reconnect to db
+
+		:raises		NotImplementedError:  abstract method
+		"""
 		raise NotImplementedError()
 
 	@abstractmethod
 	def drop_table(self, table_name: str):
+		"""
+		Drop sql table
+
+		:param		table_name:			  The table name
+		:type		table_name:			  str
+
+		:raises		NotImplementedError:  abstract method
+		"""
 		raise NotImplementedError()
 
 	@abstractmethod
 	def close_connection(self):
+		"""
+		Closes a connection.
+
+		:raises		NotImplementedError:  abstract method
+		"""
 		raise NotImplementedError()
 
 	@abstractmethod
@@ -508,39 +530,123 @@ class MultiManager(ABC):
 		model_class: "Model",
 		ignore: bool = False,
 	):
+		"""
+		insert new model to database
+
+		:param		table_name:			  The table name
+		:type		table_name:			  str
+		:param		formatted_fields:	  The formatted fields
+		:type		formatted_fields:	  dict
+		:param		pk:					  primary key value
+		:type		pk:					  int
+		:param		model_class:		  The model class
+		:type		model_class:		  Model
+		:param		ignore:				  The ignore
+		:type		ignore:				  bool
+
+		:raises		NotImplementedError:  { exception_description }
+		"""
 		raise NotImplementedError()
 
 	@abstractmethod
 	def update(self, table_name: str, key: str, orig_field: str, new_value: str):
+		"""
+		update model
+
+		:param		table_name:			  The table name
+		:type		table_name:			  str
+		:param		key:				  The key
+		:type		key:				  str
+		:param		orig_field:			  The original field
+		:type		orig_field:			  str
+		:param		new_value:			  The new value
+		:type		new_value:			  str
+
+		:raises		NotImplementedError:  abstract method
+		"""
 		raise NotImplementedError()
 
 	@abstractmethod
 	def filter(self, query: QueryBuilder):
+		"""
+		filter and get model by query
+
+		:param		query:				  The query
+		:type		query:				  QueryBuilder
+
+		:raises		NotImplementedError:  abstract method
+		"""
 		raise NotImplementedError()
 
 	@abstractmethod
 	def commit(self):
+		"""
+		Commit changes
+
+		:raises		NotImplementedError:  abstract method
+		"""
 		raise NotImplementedError()
 
 	@abstractmethod
 	def create_table(self, table_name: str, fields: dict):
+		"""
+		Creates a table.
+
+		:param		table_name:			  The table name
+		:type		table_name:			  str
+		:param		fields:				  The fields
+		:type		fields:				  dict
+
+		:raises		NotImplementedError:  abstract method
+		"""
 		raise NotImplementedError()
 
 	@abstractmethod
 	def delete(self, table_name: str, field_name: str, field_value: Any):
+		"""
+		delete model
+
+		:param		table_name:			  The table name
+		:type		table_name:			  str
+		:param		field_name:			  The field name
+		:type		field_name:			  str
+		:param		field_value:		  The field value
+		:type		field_value:		  Any
+
+		:raises		NotImplementedError:  abstract method
+		"""
 		raise NotImplementedError()
 
 
 class SQLiteMultiManager(MultiManager):
+	"""
+	This class describes a sqlite multi manager.
+	"""
+
 	def __init__(self, database_name: str):
+		"""
+		Constructs a new instance.
+
+		:param		database_name:	The database name
+		:type		database_name:	str
+		"""
 		self._connector = SQLiteDBConnector()
 		self.database_name = database_name
 		self._connector.connect(self.database_name)
 
 	def reconnect(self):
+		"""
+		reconnect to database
+		"""
 		self._connector.connect(self.database_name)
 
 	def drop_table(self, table_name: str):
+		"""
+		drop table
+
+		:param		table_name:	 The table name
+		:type		table_name:	 str
+		"""
 		query = f"DROP TABLE IF EXISTS {table_name}"
 
 		logger.warning(f"Drop table: {table_name}")
@@ -549,6 +655,9 @@ class SQLiteMultiManager(MultiManager):
 		self._connector.commit()
 
 	def close_connection(self):
+		"""
+		Closes a connection.
+		"""
 		self._connector.close_connection()
 
 	def insert(
@@ -616,7 +725,16 @@ class SQLiteMultiManager(MultiManager):
 
 		self._connector.fetch(query, (new_value, orig_field))
 
-	def filter(self, query: str):
+	def filter(self, query: str) -> list:
+		"""
+		filter and get model by query
+
+		:param		query:	The query
+		:type		query:	str
+
+		:returns:	models
+		:rtype:		list
+		"""
 		result = self._connector.fetch(query)
 
 		return result

@@ -2,9 +2,7 @@ from sqlsymphony_orm.datatypes.fields import IntegerField, RealField, TextField
 from sqlsymphony_orm.models.session_models import SessionModel
 from sqlsymphony_orm.models.session_models import SQLiteSession
 from sqlsymphony_orm.queries import QueryBuilder
-from time import time
 
-start = time()
 session = SQLiteSession("example.db")
 
 
@@ -25,36 +23,36 @@ class Comment(SessionModel):
 	user_id = IntegerField(null=False)
 
 
-user = User(name="John")
-user2 = User(name="Bob")
-user3 = User(name="Ellie")
-session.add(user)
-session.add(user2)
-session.add(user3)
-session.commit()
-session.delete(user3)
-session.commit()
-session.update(model=user2, name="Anna")
-session.commit()
+def test_sessions():
+	user = User(name="John")
+	user2 = User(name="Bob")
+	user3 = User(name="Ellie")
+	session.add(user)
+	session.add(user2)
+	session.add(user3)
+	session.commit()
+	session.delete(user3)
+	session.commit()
+	session.update(model=user2, name="Anna")
+	session.commit()
 
-comment = Comment(name=user.name, user_id=user.pk)
-session.add(comment)
-session.commit()
+	comment = Comment(name=user.name, user_id=user.pk)
+	session.add(comment)
+	session.commit()
 
-print(
-	session.filter(
+	finded_user = session.filter(
 		QueryBuilder()
 		.SELECT(*User._original_fields.keys())
 		.FROM(User.table_name)
 		.WHERE(name="Anna")
-	)
-)
-print(session.get_all())
-print(session.get_all_by_module(User))
-session.close()
+	)[0]
 
-end = time()
+	assert finded_user == user2
 
-total = round(end - start, 2)
 
-print(f"Execution time: {total}s")
+def test_all_models():
+	all_models = session.get_all()
+	all_users = session.get_all_by_module(User)
+
+	assert len(all_models) == 4
+	assert len(all_users) == 3
