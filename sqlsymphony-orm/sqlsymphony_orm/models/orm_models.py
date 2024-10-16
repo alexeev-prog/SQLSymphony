@@ -335,6 +335,45 @@ class Model(metaclass=MetaModel):
 			logger.error(f'Unknown last action type: {self._last_action["type"]}')
 			return
 
+	@classmethod
+	def _class_get_formatted_sql_fields(cls, skip_primary_key: bool = False) -> dict:
+		"""
+		Gets the formatted sql fields.
+
+		:returns:	The formatted sql fields.
+		:rtype:		dict
+		"""
+		model_fields = {}
+
+		for field_name, field in cls._original_fields.items():
+			if field.primary_key and skip_primary_key:
+				continue
+
+			model_fields[field_name] = field.to_sql_type()
+
+			if field.primary_key:
+				model_fields[field_name] = f"{field.to_sql_type()} PRIMARY KEY"
+			else:
+				if not field.null:
+					try:
+						model_fields[field_name] += " NOT NULL"
+					except KeyError:
+						model_fields[field_name] = f"{field.to_sql_type()} NOT NULL"
+				if field.unique:
+					try:
+						model_fields[field_name] += " UNIQUE"
+					except KeyError:
+						model_fields[field_name] = f"{field.to_sql_type()} UNIQUE"
+				if field.default is not None:
+					try:
+						model_fields[field_name] += f" DEFAULT {field.default}"
+					except KeyError:
+						model_fields[field_name] = (
+							f"{field.to_sql_type()} DEFAULT {field.default}"
+						)
+
+		return model_fields
+
 	def get_formatted_sql_fields(self) -> dict:
 		"""
 		Gets the formatted sql fields.

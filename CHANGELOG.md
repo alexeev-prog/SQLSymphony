@@ -1,3 +1,15 @@
+commit c5db1c1e976ff8256cd064dd652d9caa986c56e9
+Author: alexeev-prog <alexeev.dev@mail.ru>
+Date:   Mon Oct 14 22:25:19 2024 +0700
+
+    feat/tests/docs: add security/hash module, add hooks in session models, add tests, improve docs
+
+commit 2d191eecabd4410b455d458ecad4e3e4e2e46cce
+Author: alexeev-prog <alexeev.dev@mail.ru>
+Date:   Sun Oct 13 21:56:14 2024 +0700
+
+    docs: improve docstrings and code style
+
 commit 593e754c6054c04ba3a1c3c5b0d9c9263266fb6b
 Author: alexeev-prog <alexeev.dev@mail.ru>
 Date:   Sun Oct 13 21:48:12 2024 +0700

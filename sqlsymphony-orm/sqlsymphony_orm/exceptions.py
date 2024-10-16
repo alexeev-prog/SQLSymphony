@@ -191,3 +191,65 @@ class UniqueConstraintError(SQLSymphonyException):
 	def __str__(self):
 		logger.error(f"{self.__class__.__name__}: {self.get_explanation()}")
 		return f"Unique Constraint Error has been raised. {self.get_explanation()}"
+
+
+class ModelHookError(SQLSymphonyException):
+	"""
+	This class describes a model hook error.
+	"""
+
+	def __init__(self, *args):
+		"""
+		Constructs a new instance.
+
+		:param		args:  The arguments
+		:type		args:  list
+		"""
+		if args:
+			self.message = args[0]
+		else:
+			self.message = None
+
+	def get_explanation(self) -> str:
+		"""
+		Gets the explanation.
+
+		:returns:	The explanation.
+		:rtype:		str
+		"""
+		return f"Model Hooks Error. An exception occurred when executing an hook due to problems with ORM. Message: {self.message if self.message else 'missing'}"
+
+	def __str__(self):
+		logger.error(f"{self.__class__.__name__}: {self.get_explanation()}")
+		return f"Model Hook error has been raised. {self.get_explanation()}"
+
+
+class MigrationError(SQLSymphonyException):
+	"""
+	This class describes a migration error.
+	"""
+
+	def __init__(self, *args):
+		"""
+		Constructs a new instance.
+
+		:param		args:  The arguments
+		:type		args:  list
+		"""
+		if args:
+			self.message = args[0]
+		else:
+			self.message = None
+
+	def get_explanation(self) -> str:
+		"""
+		Gets the explanation.
+
+		:returns:	The explanation.
+		:rtype:		str
+		"""
+		return f"Database Migration Error. An exception occurred when executing an hook due to problems with migration. Message: {self.message if self.message else 'missing'}"
+
+	def __str__(self):
+		logger.error(f"{self.__class__.__name__}: {self.get_explanation()}")
+		return f"Migration Error has been raised. {self.get_explanation()}"

@@ -20,6 +20,7 @@ from sqlsymphony_orm.utils.auditing import (
 	InMemoryAuditStorage,
 	BasicChangeObserver,
 )
+from sqlsymphony_orm.queries import QueryBuilder
 
 
 class MetaSessionModel(type):
@@ -61,6 +62,10 @@ class MetaSessionModel(type):
 			if isinstance(v, BaseDataType):
 				fields[k] = v
 				attributes[k] = None
+
+				if isinstance(v, IntegerField):
+					if v.primary_key:
+						setattr(new_class, "_pk_name", k)
 
 		setattr(new_class, "_original_fields", fields)
 
@@ -186,7 +191,46 @@ class SessionModel(metaclass=MetaSessionModel):
 		console = Console()
 		console.print(table)
 
-	def get_formatted_sql_fields(self) -> dict:
+	@classmethod
+	def _class_get_formatted_sql_fields(cls, skip_primary_key: bool = False) -> dict:
+		"""
+		Gets the formatted sql fields.
+
+		:returns:	The formatted sql fields.
+		:rtype:		dict
+		"""
+		model_fields = {}
+
+		for field_name, field in cls._original_fields.items():
+			if field.primary_key and skip_primary_key:
+				continue
+
+			model_fields[field_name] = field.to_sql_type()
+
+			if field.primary_key:
+				model_fields[field_name] = f"{field.to_sql_type()} PRIMARY KEY"
+			else:
+				if not field.null:
+					try:
+						model_fields[field_name] += " NOT NULL"
+					except KeyError:
+						model_fields[field_name] = f"{field.to_sql_type()} NOT NULL"
+				if field.unique:
+					try:
+						model_fields[field_name] += " UNIQUE"
+					except KeyError:
+						model_fields[field_name] = f"{field.to_sql_type()} UNIQUE"
+				if field.default is not None:
+					try:
+						model_fields[field_name] += f" DEFAULT {field.default}"
+					except KeyError:
+						model_fields[field_name] = (
+							f"{field.to_sql_type()} DEFAULT {field.default}"
+						)
+
+		return model_fields
+
+	def get_formatted_sql_fields(self, skip_primary_key: bool = False) -> dict:
 		"""
 		Gets the formatted sql fields.
 
@@ -196,7 +240,11 @@ class SessionModel(metaclass=MetaSessionModel):
 		model_fields = {}
 
 		for field_name, field in self._original_fields.items():
+			if field.primary_key and skip_primary_key:
+				continue
+
 			model_fields[field_name] = field.to_sql_type()
+
 			if field.primary_key:
 				model_fields[field_name] = f"{field.to_sql_type()} PRIMARY KEY"
 			else:
@@ -339,12 +387,32 @@ class SQLiteSession(Session):
 		self.audit_manager = AuditManager(InMemoryAuditStorage())
 		self.audit_manager.attach(BasicChangeObserver())
 
-	def reconnect(self):
+	def reconnect(self, database_file: str = None):
 		"""
 		Reconnecto to database
 		"""
+		if database_file is not None:
+			self.database_file = Path(database_file)
 		logger.info(f"Session {self.database_file}: reconnect")
-		self.manager.reconnect()
+		self.manager.reconnect(database_file)
+
+	def execute(
+		self, raw_sql_query: str, values: tuple = (), get_cursor: bool = False
+	) -> list:
+		"""
+		Execute raw sql query
+
+		:param		raw_sql_query:	The raw sql query
+		:type		raw_sql_query:	str
+		:param		values:			The values
+		:type		values:			tuple
+		:param		get_cursor:		The get cursor
+		:type		get_cursor:		bool
+
+		:returns:	list with output data
+		:rtype:		list
+		"""
+		return self.manager.execute(raw_sql_query, values, get_cursor)
 
 	def get_all(self) -> List[SessionModel]:
 		"""
@@ -502,10 +570,18 @@ class SQLiteSession(Session):
 			model._model_name,
 		)
 
+		formatted_fields = model.get_formatted_sql_fields(skip_primary_key=True)
+
 		self.manager.create_table(model.table_name, model.get_formatted_sql_fields())
-		self.manager.insert(
-			model.table_name, model.get_formatted_sql_fields(), model.pk, model, ignore
+
+		self.manager.insert(model.table_name, formatted_fields, model.pk, model, ignore)
+
+		last_pk = self.execute(
+			f'SELECT max({model._primary_key["field_name"]}) FROM {model.table_name}'
 		)
+
+		model._primary_key["value"] = int(last_pk[0][0])
+
 		logger.info(
 			f"Session {self.database_file}: insert new model: {model.unique_id}"
 		)

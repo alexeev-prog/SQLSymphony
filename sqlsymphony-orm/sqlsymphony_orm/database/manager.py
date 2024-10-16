@@ -132,7 +132,7 @@ class ModelManager(ABC):
 
 class SQLiteModelManager(ModelManager):
 	"""
-	This class describes a sq lite db manager.
+	This class describes a sqlite db manager.
 	"""
 
 	def __init__(self, model_class: "Model", database_name: str = "database.db"):
@@ -634,10 +634,15 @@ class SQLiteMultiManager(MultiManager):
 		self.database_name = database_name
 		self._connector.connect(self.database_name)
 
-	def reconnect(self):
+	def execute(self, raw_sql_query: str, values: tuple = (), get_cursor: bool = False):
+		return self._connector.fetch(raw_sql_query, values, get_cursor)
+
+	def reconnect(self, database_file: str = None):
 		"""
 		reconnect to database
 		"""
+		if database_file is not None:
+			self.database_name = database_file
 		self._connector.connect(self.database_name)
 
 	def drop_table(self, table_name: str):

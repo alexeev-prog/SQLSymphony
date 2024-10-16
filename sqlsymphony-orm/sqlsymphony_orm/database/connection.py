@@ -120,7 +120,7 @@ class SQLiteDBConnector(DBConnector):
 		logger.info("Commit changes to database")
 		self._connection.commit()
 
-	def fetch(self, query: str, values: Tuple = ()) -> list:
+	def fetch(self, query: str, values: Tuple = (), get_cursor: bool = False) -> list:
 		"""
 		Fetch SQL query
 
@@ -143,4 +143,4 @@ class SQLiteDBConnector(DBConnector):
 			logger.error(f"An exception occurred while executing the request: {ex}")
 			raise ex
 
-		return cursor.fetchall()
+		return [cursor, cursor.fetchall()] if get_cursor else cursor.fetchall()
