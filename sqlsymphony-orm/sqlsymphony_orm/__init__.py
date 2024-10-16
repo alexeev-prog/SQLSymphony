@@ -8,7 +8,7 @@ from loguru import logger
 
 install(show_locals=True)
 
-__version__ = "0.3.11"
+__version__ = "0.3.12"
 __author__ = "alexeev-prog"
 __license__ = "GNU GPL v3"
 __language__ = "Python 3.12.7"

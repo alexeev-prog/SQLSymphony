@@ -490,7 +490,10 @@ class SQLiteSession(Session):
 					if tuple(data["values"]) == result:
 						results.append(self.models[unique_id]["model"])
 
-		return results[0] if first else results
+		if results:
+			return results[0] if first else results
+		else:
+			return None
 
 	def update(self, model: SessionModel, **kwargs):
 		"""

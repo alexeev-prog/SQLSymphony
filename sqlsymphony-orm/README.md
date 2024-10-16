@@ -97,6 +97,178 @@ Once installed, you can start using the library in your Python projects. Check o
 
 ## 💻 Usage Examples
 
+### Migrations from old model to new model
+During migration, a migrations directory is created, where database backups are stored, as well as a file sqlsymphony_migrates.json, which stores information about migrations. If you want to restore the database, then call the revert_migration function with the index_key parameter (by default -1, that is, the last migration), it will take the name of the database backup from sqlsymphony_migrates.json and replace the current database with the backup one. The current database file is taken from Session.
+
+<details>
+
+<summary>Migrate from old model to new model</summary>
+
+```python
+from sqlsymphony_orm.datatypes.fields import IntegerField, RealField, TextField
+from sqlsymphony_orm.models.session_models import SessionModel
+from sqlsymphony_orm.models.session_models import SQLiteSession
+from sqlsymphony_orm.queries import QueryBuilder
+from sqlsymphony_orm.migrations.migrations_manager import SQLiteMigrationManager
+from time import time
+
+start = time()
+session = SQLiteSession("example.db")
+
+
+class User(SessionModel):
+	__tablename__ = "Users"
+
+	id = IntegerField(primary_key=True)
+	name = TextField(null=False)
+	cash = RealField(null=False, default=0.0)
+
+	def __repr__(self):
+		return f"<User {self.pk}>"
+
+
+class User2(SessionModel):
+	__tablename__ = "Users"
+
+	id = IntegerField(primary_key=True)
+	name = TextField(null=False)
+	cash = RealField(null=False, default=0.0)
+	password = TextField(default="password1234")
+
+	def __repr__(self):
+		return f"<User {self.pk}>"
+
+
+class Comment(SessionModel):
+	id = IntegerField(primary_key=True)
+	name = TextField(null=False)
+	user_id = IntegerField(null=False)
+
+
+user = User(name="John")
+user2 = User(name="Bob")
+user3 = User(name="Ellie")
+session.add(user)
+session.commit()
+session.add(user2)
+session.commit()
+session.add(user3)
+session.commit()
+session.delete(user3)
+session.commit()
+session.update(model=user2, name="Anna")
+session.commit()
+
+comment = Comment(name=user.name, user_id=user.pk)
+session.add(comment)
+session.commit()
+
+print(
+	session.filter(QueryBuilder().SELECT("*").FROM(User.table_name).WHERE(name="Anna"))
+)
+print(session.get_all())
+print(session.get_all_by_module(User))
+print(user.pk)
+
+migrations_manager = SQLiteMigrationManager(session)
+migrations_manager.migrate_from_model(User, User2, "Users", "UserAnd")
+
+session.close()
+
+end = time()
+
+total = round(end - start, 2)
+
+print(f"Execution time: {total}s")
+```
+
+</details>
+
+<details>
+
+<summary>Revert last migration (rollback database)</summary>	
+
+```python
+from sqlsymphony_orm.datatypes.fields import IntegerField, RealField, TextField
+from sqlsymphony_orm.models.session_models import SessionModel
+from sqlsymphony_orm.models.session_models import SQLiteSession
+from sqlsymphony_orm.queries import QueryBuilder
+from sqlsymphony_orm.migrations.migrations_manager import SQLiteMigrationManager
+from time import time
+
+start = time()
+session = SQLiteSession("example.db")
+
+
+class User(SessionModel):
+	__tablename__ = "Users"
+
+	id = IntegerField(primary_key=True)
+	name = TextField(null=False)
+	cash = RealField(null=False, default=0.0)
+
+	def __repr__(self):
+		return f"<User {self.pk}>"
+
+
+class User2(SessionModel):
+	__tablename__ = "Users"
+
+	id = IntegerField(primary_key=True)
+	name = TextField(null=False)
+	cash = RealField(null=False, default=0.0)
+	password = TextField(default="password1234")
+
+	def __repr__(self):
+		return f"<User {self.pk}>"
+
+
+class Comment(SessionModel):
+	id = IntegerField(primary_key=True)
+	name = TextField(null=False)
+	user_id = IntegerField(null=False)
+
+
+user = User(name="John")
+user2 = User(name="Bob")
+user3 = User(name="Ellie")
+session.add(user)
+session.commit()
+session.add(user2)
+session.commit()
+session.add(user3)
+session.commit()
+session.delete(user3)
+session.commit()
+session.update(model=user2, name="Anna")
+session.commit()
+
+comment = Comment(name=user.name, user_id=user.pk)
+session.add(comment)
+session.commit()
+
+print(
+	session.filter(QueryBuilder().SELECT("*").FROM(User.table_name).WHERE(name="Anna"))
+)
+print(session.get_all())
+print(session.get_all_by_module(User))
+print(user.pk)
+
+migrations_manager = SQLiteMigrationManager(session)
+migrations_manager.migrate_from_model(User, User2, "Users", "UserAnd")
+migrations_manager.revert_migration(-1) # -1 is last index key
+
+session.close()
+
+end = time()
+
+total = round(end - start, 2)
+
+print(f"Execution time: {total}s")
+```
+
+</details>
+
 ### Fields
 ![fields](https://github.com/alexeev-prog/SQLSymphony/raw/refs/heads/main/docs/img/fields.png)
 
@@ -574,7 +746,8 @@ Session Model has some methods and functions for interactions with database:
 
  + `pk` (property) - a primary key value.
  + `view_table_info()` - print beautiful table with some info about model.
- + `get_formatted_sql_fields()` - return an dictionary with formatted fields for sql query (ex. insert)
+ + `get_formatted_sql_fields(skip_primary_key: bool = False)` - return an dictionary with formatted fields for sql query (ex. insert)
+ + `_class_get_formatted_sql_fields(skip_primary_key: bool = False)` - return an dictionary with formatted fields for sql query (class method)
 
 #### Session
 A class for session.
@@ -637,7 +810,8 @@ Model has some methods and functions for interactions with database:
  + `update(**kwargs)` - update any value of model.
  + `delete(field_name: str = None, field_value: Any = None)` - delete self model or delete model by field name and value.
  + `rollback_last_action()` - revert last changes (one action)
- + `get_formatted_sql_fields()` - return an dictionary with formatted fields for sql query (ex. insert)
+ + `get_formatted_sql_fields(skip_primary_key: bool = False)` - return an dictionary with formatted fields for sql query (ex. insert)
+ + `_class_get_formatted_sql_fields(skip_primary_key: bool = False)` - return an dictionary with formatted fields for sql query (class method)
 
 #### Objects Instance
 Below you can see the methods belonging to the objects instance. Through it you can manage this and other instances of the model:
@@ -650,6 +824,19 @@ Below you can see the methods belonging to the objects instance. Through it you 
  + `create_table(table_name: str, fields: dict)` - create table.
  + `delete(table_name: str, field_name: str, field_value: Any)` - delete element from database.
  + `fetch()` - fetch last query and return fetched result.
+
+### SQLiteModelManager
+This class describes a sqlite db manager.
+
+#### Self variables
+SQLite model manager has some global variables that are needed to configure management process and database connection:
+
+ + `model_class` - main model class instance.
+ + `_model_fields` - original fields of model.
+ + `q` - basic `QueryBuilder` instance for fetch.
+ + `_connector` - database connector.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## 💬 Support
 

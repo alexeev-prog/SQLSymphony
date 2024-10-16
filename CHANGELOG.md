@@ -1,3 +1,9 @@
+commit 50c5c3766fcad1a4d372f60b99a3241d11a7d2ed
+Author: alexeev-prog <alexeev.dev@mail.ru>
+Date:   Wed Oct 16 22:50:52 2024 +0700
+
+    feat/fix: fix primary key bug, add migrations manager
+
 commit c5db1c1e976ff8256cd064dd652d9caa986c56e9
 Author: alexeev-prog <alexeev.dev@mail.ru>
 Date:   Mon Oct 14 22:25:19 2024 +0700
