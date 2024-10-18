@@ -219,7 +219,7 @@ class InMemoryAuditStorage(AuditStorage):
 		timestamp: datetime,
 	) -> Tuple[Optional[str], Optional[str]]:
 		"""
-		{ function_description }
+		Revert (rollback) changes
 
 		:param		model_name:	 The model name
 		:type		model_name:	 str

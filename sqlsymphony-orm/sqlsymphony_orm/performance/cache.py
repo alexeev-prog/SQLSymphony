@@ -23,7 +23,7 @@ class CacheBase(object):
 		:param		key:  The key
 		:type		key:  str
 
-		:returns:	{ description_of_the_return_value }
+		:returns:	value from cache
 		:rtype:		Any
 		"""
 		raise NotImplementedError
@@ -142,7 +142,7 @@ class CacheFactory(object):
 		Returns: CacheBase: A new instance of the specified cache type.
 
 		:param		cache_type:	 The cache type
-		:type		cache_type:	 { type_description }
+		:type		cache_type:	 Type[CacheBase]
 		:param		args:		 The arguments
 		:type		args:		 list
 		:param		kwargs:		 The keywords arguments

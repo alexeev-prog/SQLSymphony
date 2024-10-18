@@ -1,4 +1,3 @@
-@mainpage
 # SQLSymphony
 <a id="readme-top"></a> 
 
@@ -96,6 +95,46 @@ Once installed, you can start using the library in your Python projects. Check o
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## 💻 Usage Examples
+
+## Security.Hashing
+A security module created for hash functions.
+
+<details>
+
+<summary>PlainHasher</summary>
+
+```python
+from sqlsymphony_orm.security.hashing import PlainHasher, HashAlgorithm
+
+hasher = PlainHasher(HashAlgorithm.SHA512) # also: SHA256, SHA512, MD5, BLAKE2B, BLAKE2S
+
+hash1 = hasher.hash('password')
+hash2 = hasher.hash('pasword')
+
+hasher.verify('password', hash1) # True
+hasher.verify('password', hash2) # False
+```
+
+</details>
+
+<details>
+
+<summary>SaltedHasher</summary>
+
+```python
+from sqlsymphony_orm.security.hashing import SaltedHasher, HashAlgorithm
+
+hasher = SaltedHasher(HashAlgorithm.SHA512, salt='SALT') # also: SHA256, SHA512, MD5, BLAKE2B, BLAKE2S
+hasher2 = SaltedHasher(HashAlgorithm.SHA512, salt='SALT2') # also: SHA256, SHA512, MD5, BLAKE2B, BLAKE2S
+
+hash1 = hasher.hash('password')
+hash2 = hasher2.hash('password')
+
+hasher.verify('password', hash1) # True
+hasher.verify('password', hash2) # False
+```
+
+</details>
 
 ### Migrations from old model to new model
 During migration, a migrations directory is created, where database backups are stored, as well as a file sqlsymphony_migrates.json, which stores information about migrations. If you want to restore the database, then call the revert_migration function with the index_key parameter (by default -1, that is, the last migration), it will take the name of the database backup from sqlsymphony_migrates.json and replace the current database with the backup one. The current database file is taken from Session.
@@ -839,7 +878,6 @@ SQLite model manager has some global variables that are needed to configure mana
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## 💬 Support
-
 If you encounter any issues or have questions about SqlSymphony, please:
 
 - Check the [documentation](https://alexeev-prog.github.io/SQLSymphony) for answers
@@ -849,14 +887,12 @@ If you encounter any issues or have questions about SqlSymphony, please:
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## 🤝 Contributing
-
 We welcome contributions from the community! If you'd like to help improve SqlSymphony, please check out the [contributing guidelines](https://github.com/alexeev-prog/SqlSymphony/blob/main/CONTRIBUTING.md) to get started.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## 🔮 Roadmap
-
-Our future goals for SqlSymphony include:
+Our future goals for SQLSymphony include:
 
 - 📚 Expanding support for more SQLite3 features
 - 🚀 Improving performance through further optimizations
@@ -865,15 +901,15 @@ Our future goals for SqlSymphony include:
 - 🔧 Implementing advanced querying capabilities
 - 🚀 Add asynchronous operation mode
 - ☑️ Add more fields
-- ✈️ Create Migrations system and Migrations Manager
 - ⌨️ Create ForeignKey field
 - ⌨️ Create RelationShip
 - 🖇️ Create more query-get methods
+- ✈️ Create examples for flask, fastapi
+- 🌐 Create software for remote connection to SQLSymphony Database
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## License
-
 Distributed under the GNU GPL v3 License. See [LICENSE](https://github.com/alexeev-prog/SQLSymphony/blob/main/LICENSE) for more information.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>

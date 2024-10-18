@@ -11,16 +11,44 @@ from loguru import logger
 
 
 class MigrationManager(ABC):
+	"""
+	This class describes a migration manager.
+	"""
+
 	@abstractmethod
 	def get_current_table_columns(self, table_name: str):
+		"""
+		Gets the current table columns.
+
+		:param		table_name:			  The table name
+		:type		table_name:			  str
+
+		:raises		NotImplementedError:  abstract method
+		"""
 		raise NotImplementedError()
 
 	@abstractmethod
 	def get_table_columns_from_model(self, model: "Model"):
+		"""
+		Gets the table columns from model.
+
+		:param		model:				  The model
+		:type		model:				  Model
+
+		:raises		NotImplementedError:  abstract method
+		"""
 		raise NotImplementedError()
 
 	@abstractmethod
 	def revert_migration(self, index_key: int = -1):
+		"""
+		Revert migration
+
+		:param		index_key:			  The index key
+		:type		index_key:			  int
+
+		:raises		NotImplementedError:  abstract method
+		"""
 		raise NotImplementedError()
 
 
@@ -72,6 +100,16 @@ class SQLiteMigrationManager(MigrationManager):
 		"""
 		return [key for key in model._original_fields.keys()]
 
+	def upload_migrations_file(self):
+		logger.debug(f"Load JSON migrations history file: {self.migrations_file}")
+		with open(self.migrations_file, "r") as read_file:
+			self.migrations = json.load(read_file)
+
+	def update_migrations_file(self):
+		logger.debug(f"Update JSON migrations history file: {self.migrations_file}")
+		with open(self.migrations_file, "w") as write_file:
+			json.dump(self.migrations, write_file, indent=4)
+
 	def migrate_from_model(
 		self,
 		old_model: Union["SessionModel", "Model"],
@@ -102,7 +140,7 @@ class SQLiteMigrationManager(MigrationManager):
 				f"ALTER TABLE {original_table_name} RENAME TO {new_table_name};"
 			)
 			logger.debug(
-				f"Change table name: {original_table_name} -> {new_table_name}"
+				f"[Migration] Change table name: {original_table_name} -> {new_table_name}"
 			)
 			new_model.table_name = new_table_name
 			original_table_name = new_table_name
@@ -128,7 +166,7 @@ class SQLiteMigrationManager(MigrationManager):
 
 		for field_name in dropped:
 			logger.debug(
-				f'Drop column {field_name.split(" ")[0]} from table {original_table_name}'
+				f'[Migration] Drop column {field_name.split(" ")[0]} from table {original_table_name}'
 			)
 			sql_queries.append(
 				f"ALTER TABLE {original_table_name} DROP COLUMN {field_name.split(" ")[0]};"
@@ -139,7 +177,7 @@ class SQLiteMigrationManager(MigrationManager):
 				raise MigrationError(
 					f'Cannot script a "not null" field without default value in field "{field}"'
 				)
-			logger.debug(f"Add column {field} to {original_table_name}")
+			logger.debug(f"[Migration] Add column {field} to {original_table_name}")
 			sql_queries.append(f"ALTER TABLE {original_table_name} ADD COLUMN {field};")
 
 		migrationfile = os.path.join(
@@ -150,28 +188,30 @@ class SQLiteMigrationManager(MigrationManager):
 		shutil.copyfile(self.session.database_file, migrationfile)
 
 		if Path(self.migrations_file).exists():
-			logger.debug(f"Load JSON migrations history file: {self.migrations_file}")
-			with open(self.migrations_file, "r") as read_file:
-				self.migrations = json.load(read_file)
+			self.upload_migrations_file()
 
 		self.migrations[str(len(self.migrations) + 1)] = {
 			"migrationfile": migrationfile,
 			"tablename": original_table_name,
 			"description": f"from {old_model._model_name} to {new_model._model_name}",
 			"sql_queries": list(sql_queries),
-			"new_fields": list(new_fields),
-			"old_fields": list(old_fields),
-			"added": list(added),
-			"dropped": list(dropped),
+			"fields": {
+				"new": list(new_fields),
+				"old": list(old_fields),
+				"added": list(added),
+				"dropped": list(dropped),
+			},
 		}
 
-		with open(self.migrations_file, "w") as write_file:
-			logger.debug(f"Update JSON migrations history file: {self.migrations_file}")
-			json.dump(self.migrations, write_file, indent=4)
+		self.update_migrations_file()
 
 		for sql_query in sql_queries:
 			logger.debug(f"[Migration] Execute sql query: {sql_query}")
-			self.session.execute(sql_query)
+
+			try:
+				self.session.execute(sql_query)
+			except Exception as ex:
+				raise MigrationError(str(ex))
 
 	def revert_migration(self, index_key: int = -1):
 		"""
@@ -180,9 +220,7 @@ class SQLiteMigrationManager(MigrationManager):
 		:param		index_key:	The index key
 		:type		index_key:	int
 		"""
-		with open(self.migrations_file, "r") as read_file:
-			logger.debug(f"Load JSON migrations history file: {self.migrations_file}")
-			self.migrations = json.load(read_file)
+		self.upload_migrations_file()
 
 		if index_key == -1:
 			index_key = [k for k in self.migrations.keys()][-1]
@@ -192,5 +230,5 @@ class SQLiteMigrationManager(MigrationManager):
 		except KeyError as ke:
 			logger.error(f"Cannot get migration by index {index_key}: {ke}")
 
-		logger.info("Rollback database from new to old.")
+		logger.info("[Migration] Rollback database from new to old.")
 		shutil.copyfile(migration["migrationfile"], self.session.database_file)

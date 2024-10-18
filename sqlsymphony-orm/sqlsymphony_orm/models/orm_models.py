@@ -340,6 +340,11 @@ class Model(metaclass=MetaModel):
 		"""
 		Gets the formatted sql fields.
 
+		:param		cls:			   The cls
+		:type		cls:			   class
+		:param		skip_primary_key:  The skip primary key
+		:type		skip_primary_key:  bool
+
 		:returns:	The formatted sql fields.
 		:rtype:		dict
 		"""
@@ -374,9 +379,12 @@ class Model(metaclass=MetaModel):
 
 		return model_fields
 
-	def get_formatted_sql_fields(self) -> dict:
+	def get_formatted_sql_fields(self, skip_primary_key: bool = False) -> dict:
 		"""
 		Gets the formatted sql fields.
+
+		:param		skip_primary_key:  The skip primary key
+		:type		skip_primary_key:  bool
 
 		:returns:	The formatted sql fields.
 		:rtype:		dict
@@ -384,6 +392,9 @@ class Model(metaclass=MetaModel):
 		model_fields = {}
 
 		for field_name, field in self._original_fields.items():
+			if field.primary_key and skip_primary_key:
+				continue
+
 			model_fields[field_name] = field.to_sql_type()
 			if field.primary_key:
 				model_fields[field_name] = f"{field.to_sql_type()} PRIMARY KEY"

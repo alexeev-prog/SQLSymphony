@@ -1,3 +1,9 @@
+commit 0e43063ea08faad3c4352b6858843ff5a242d668
+Author: alexeev-prog <alexeev.dev@mail.ru>
+Date:   Wed Oct 16 22:57:06 2024 +0700
+
+    fix/docs: fix small bug in session.filter and fix docs bugs
+
 commit 50c5c3766fcad1a4d372f60b99a3241d11a7d2ed
 Author: alexeev-prog <alexeev.dev@mail.ru>
 Date:   Wed Oct 16 22:50:52 2024 +0700
