@@ -289,7 +289,7 @@ class Session(ABC):
 		raise NotImplementedError
 
 	@abstractmethod
-	def get_all_by_module(self, needed_model: SessionModel):
+	def get_all_by_model(self, needed_model: SessionModel):
 		"""
 		Gets all models by module.
 
@@ -424,7 +424,7 @@ class SQLiteSession(Session):
 		models_instances = [self.models[model]["model"] for model in self.models.keys()]
 		return models_instances
 
-	def get_all_by_module(self, needed_model: SessionModel) -> List[SessionModel]:
+	def get_all_by_model(self, needed_model: SessionModel) -> List[SessionModel]:
 		"""
 		Gets all by module.
 
@@ -441,6 +441,36 @@ class SQLiteSession(Session):
 		for model in all_instances:
 			if model._model_name == model_name:
 				needed_instances.append(model)
+
+		if len(needed_instances) < 1:
+			models_tuple = self.manager.filter(
+				str(QueryBuilder().SELECT("*").FROM(needed_model.table_name))
+			)
+			if len(models_tuple) < 1:
+				return
+			fields = [
+				{
+					f"{field_name}": models_tuple[i][num]
+					if not needed_model._original_fields[field_name].primary_key
+					else "<PRIMARYKEY>"
+					for num, field_name in enumerate(
+						needed_model._original_fields.keys()
+					)
+				}
+				for i in range(len(models_tuple))
+			]
+			models = []
+
+			for i in range(len(fields)):
+				prim_key = [
+					field if field_val == "<PRIMARYKEY>" else False
+					for field, field_val in fields[i].items()
+				]
+				if prim_key[0]:
+					del fields[i][prim_key[0]]
+				models.append(needed_model(**fields[i]))
+
+			return models
 
 		return needed_instances
 

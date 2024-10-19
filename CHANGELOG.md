@@ -1,3 +1,9 @@
+commit 46b5a03d454c28d2ec6daea0dcae044e68ca1917
+Author: alexeev-prog <alexeev.dev@mail.ru>
+Date:   Fri Oct 18 19:21:07 2024 +0700
+
+    fix/docs: fix bugs and improve docs and other small changes
+
 commit 0e43063ea08faad3c4352b6858843ff5a242d668
 Author: alexeev-prog <alexeev.dev@mail.ru>
 Date:   Wed Oct 16 22:57:06 2024 +0700

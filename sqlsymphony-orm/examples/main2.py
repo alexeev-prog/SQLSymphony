@@ -60,7 +60,7 @@ print(
 	session.filter(QueryBuilder().SELECT("*").FROM(User.table_name).WHERE(name="Anna"))
 )
 print(session.get_all())
-print(session.get_all_by_module(User))
+print(session.get_all_by_model(User))
 print(user.pk)
 
 migrations_manager = SQLiteMigrationManager(session)
