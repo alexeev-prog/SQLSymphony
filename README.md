@@ -51,7 +51,7 @@ SQLSymphony is a **lightweight** ✨, **powerful** 💪, and **high-performance*
 | 📚 Comprehensive Documentation   | ✔️          | ✔️         | ✔️      |
 | 🔥 Active Development            | ✔️          | ✔️         | ❌      |
 | 💻 Audit changes & reverts       | ✔️          | ❌         | ❌      |
-| ⚡ ASYNC Support                 | COMING SOON | ✔️         | ❌      |
+| ⚡ ASYNC Support                 | ✔️          | ✔️ (v2)    | ❌      |
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

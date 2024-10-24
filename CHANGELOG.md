@@ -1,3 +1,9 @@
+commit cf0459b3f8a01f404b757707b74daaa92e0f841b
+Author: alexeev-prog <alexeev.dev@mail.ru>
+Date:   Sun Oct 20 00:58:11 2024 +0700
+
+    fix/docs: fix get_all_by_model, improve docs
+
 commit 46b5a03d454c28d2ec6daea0dcae044e68ca1917
 Author: alexeev-prog <alexeev.dev@mail.ru>
 Date:   Fri Oct 18 19:21:07 2024 +0700
