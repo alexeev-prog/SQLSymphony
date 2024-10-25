@@ -83,7 +83,9 @@ class HashingBase(ABC):
 		raise NotImplementedError()
 
 	@abstractmethod
-	async def verify(self, data: Union[bytes, str], hashed_data: Union[bytes, str]) -> bool:
+	async def verify(
+		self, data: Union[bytes, str], hashed_data: Union[bytes, str]
+	) -> bool:
 		"""
 		Verify data and hashed data
 
@@ -131,7 +133,9 @@ class PlainHasher(HashingBase):
 		result = hasher(data).digest()
 		return result
 
-	async def verify(self, data: Union[bytes, str], hashed_data: Union[bytes, str]) -> bool:
+	async def verify(
+		self, data: Union[bytes, str], hashed_data: Union[bytes, str]
+	) -> bool:
 		"""
 		Verify data and hashed data
 

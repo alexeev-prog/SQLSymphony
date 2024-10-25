@@ -32,7 +32,7 @@ class DBConnector(ABC):
 		return cls.instance
 
 	@abstractmethod
-	def connect(self, database_name: str):
+	async def connect(self, database_name: str):
 		"""
 		Connect to database
 
@@ -44,7 +44,7 @@ class DBConnector(ABC):
 		raise NotImplementedError()
 
 	@abstractmethod
-	def commit(self):
+	async def commit(self):
 		"""
 		Commit changes to database
 
@@ -53,7 +53,7 @@ class DBConnector(ABC):
 		raise NotImplementedError()
 
 	@abstractmethod
-	def fetch(self, query: str):
+	async def fetch(self, query: str):
 		"""
 		Fetches the given query.
 
@@ -89,15 +89,15 @@ class SQLiteDBConnector(DBConnector):
 
 		return cls.instance
 
-	def close_connection(self):
+	async def close_connection(self):
 		"""
 		Closes a connection.
 		"""
-		self._connection.close()
+		await self._connection.close()
 		print("[bold]Connection has been closed[/bold]")
 		logger.info("Close Database Connection")
 
-	def connect(self, database_name: str = "database.db"):
+	async def connect(self, database_name: str = "database.db"):
 		"""
 		Connect to database
 
@@ -110,17 +110,17 @@ class SQLiteDBConnector(DBConnector):
 		logger.info(f"[{database_name}] Connect database...")
 
 		for pragma in pragmas:
-			self._connection.execute(pragma)
-			logger.debug(f"Set pragma: {pragma}")
+			await self._connection.execute(pragma)
+			logger.debug(f"Set sqlite3 pragma: {pragma}")
 
-	def commit(self):
+	async def commit(self):
 		"""
 		Commit changes to database
 		"""
 		logger.info("Commit changes to database")
-		self._connection.commit()
+		await await self._connection.commit()
 
-	def fetch(self, query: str, values: Tuple = (), get_cursor: bool = False) -> list:
+	async def fetch(self, query: str, values: Tuple = (), get_cursor: bool = False) -> list:
 		"""
 		Fetch SQL query
 
@@ -133,7 +133,7 @@ class SQLiteDBConnector(DBConnector):
 		:rtype:		list
 		"""
 		cursor = self._connection.cursor()
-		self.commit()
+		await self.commit()
 
 		logger.debug(f"Fetch query: {query} {values}")
 

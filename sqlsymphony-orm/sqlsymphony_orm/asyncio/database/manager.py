@@ -21,7 +21,7 @@ class DatabaseSession(ABC):
 		self.connector = connector
 
 	@abstractmethod
-	def __enter__(self):
+	async def __enter__(self):
 		"""
 		Enter to context manager
 
@@ -32,12 +32,12 @@ class DatabaseSession(ABC):
 		return self.connector
 
 	@abstractmethod
-	def __exit__(self):
+	async def __exit__(self):
 		"""
 		Exit from context manager
 		"""
 		logger.debug("Stop DatabaseSession")
-		self.connector.close_connection()
+		await self.connector.close_connection()
 
 
 class SQLiteDatabaseSession(DatabaseSession):
@@ -57,7 +57,7 @@ class SQLiteDatabaseSession(DatabaseSession):
 		self.connector = connector
 		self.commit = commit
 
-	def __enter__(self):
+	async def __enter__(self):
 		"""
 		Enter to context manager
 
@@ -67,7 +67,7 @@ class SQLiteDatabaseSession(DatabaseSession):
 		logger.info("Create SQLiteDatabaseSession")
 		return self.connector
 
-	def __exit__(self, type, value, traceback):
+	async def __exit__(self, type, value, traceback):
 		"""
 		Exit from context manager
 
@@ -79,11 +79,11 @@ class SQLiteDatabaseSession(DatabaseSession):
 			logger.debug("Commit changes...")
 
 			try:
-				self.connector.commit()
+				await self.connector.commit()
 			except Exception as ex:
 				logger.error(f"Error commit changes: {ex}")
 
-		self.connector.close_connection()
+		await self.connector.close_connection()
 
 
 class ModelManager(ABC):
@@ -103,11 +103,11 @@ class ModelManager(ABC):
 
 		q = QueryBuilder()
 
-		self.q = q.SELECT(*self._model_fields).FROM(model_class._table_name)
+		self.q = await q.SELECT(*self._model_fields).FROM(model_class._table_name)
 		self.connector = DBConnector()
 
 	@abstractmethod
-	def filter(self, *args, **kwargs):
+	async def filter(self, *args, **kwargs):
 		"""
 		Filter method
 
@@ -121,7 +121,7 @@ class ModelManager(ABC):
 		raise NotImplementedError()
 
 	@abstractmethod
-	def fetch(self):
+	async def fetch(self):
 		"""
 		Fetches the object.
 
@@ -149,13 +149,13 @@ class SQLiteModelManager(ModelManager):
 
 		q = QueryBuilder()
 
-		self.q = q.SELECT(*self._model_fields).FROM(self.model_class.table_name)
+		self.q = await q.SELECT(*self._model_fields).FROM(self.model_class.table_name)
 		self._connector = SQLiteDBConnector()
 
 		if self.model_class.table_name != "model":
-			self._connector.connect(database_name)
+			await self._connector.connect(database_name)
 
-	def drop_table(self, table_name: str = None):
+	async def drop_table(self, table_name: str = None):
 		if table_name is None:
 			table_name = self.model_class.table_name
 
@@ -163,13 +163,13 @@ class SQLiteModelManager(ModelManager):
 
 		logger.warning(f"Drop table: {table_name}")
 
-		self._connector.fetch(query)
-		self._connector.commit()
+		await self._connector.fetch(query)
+		await self._connector.commit()
 
-	def close_connection(self):
-		self._connector.close_connection()
+	async def close_connection(self):
+		await self._connector.close_connection()
 
-	def insert(
+	async def insert(
 		self,
 		table_name: str,
 		formatted_fields: dict,
@@ -213,9 +213,9 @@ class SQLiteModelManager(ModelManager):
 			f'[{table_name}] Insert {"(or ignore)" if ignore else ""} new model into database'
 		)
 
-		self._connector.fetch(query, values)
+		await self._connector.fetch(query, values)
 
-	def update(self, table_name: str, key: str, orig_field: str, new_value: str):
+	async def update(self, table_name: str, key: str, orig_field: str, new_value: str):
 		"""
 		Update fields in database table
 
@@ -232,9 +232,9 @@ class SQLiteModelManager(ModelManager):
 
 		logger.info(f"[{table_name}] Update model: {key}={new_value}")
 
-		self._connector.fetch(query, (new_value, orig_field))
+		await self._connector.fetch(query, (new_value, orig_field))
 
-	def filter(self, first: bool = False, *args, **kwargs) -> list:
+	async def filter(self, first: bool = False, *args, **kwargs) -> list:
 		"""
 		Filter models (WHERE sql query)
 
@@ -246,7 +246,7 @@ class SQLiteModelManager(ModelManager):
 		:returns:	list of models
 		:rtype:		list
 		"""
-		self.q = self.q.WHERE(*args, **kwargs)
+		self.q = await self.q.WHERE(*args, **kwargs)
 
 		result = self.fetch()
 
@@ -255,13 +255,13 @@ class SQLiteModelManager(ModelManager):
 		else:
 			return result
 
-	def commit(self):
+	async def commit(self):
 		"""
 		Commits changes.
 		"""
-		self._connector.commit()
+		await self._connector.commit()
 
-	def create_table(self, table_name: str, fields: dict):
+	async def create_table(self, table_name: str, fields: dict):
 		"""
 		Creates a table.
 
@@ -282,10 +282,10 @@ class SQLiteModelManager(ModelManager):
 
 		logger.info(f"Create new table: {table_name}")
 
-		self._connector.fetch(query)
-		self._connector.commit()
+		await self._connector.fetch(query)
+		await self._connector.commit()
 
-	def delete(self, table_name: str, field_name: str, field_value: Any):
+	async def delete(self, table_name: str, field_name: str, field_value: Any):
 		"""
 		Delete model from database
 
@@ -299,9 +299,9 @@ class SQLiteModelManager(ModelManager):
 		query = f"DELETE FROM {table_name} WHERE {field_name} = ?"
 		logger.info(f"[{table_name}] Delete model ({field_name}={field_value})")
 
-		self._connector.fetch(query, (field_value,))
+		await self._connector.fetch(query, (field_value,))
 
-	def fetch(self) -> list:
+	async def fetch(self) -> list:
 		"""
 		Fetches the object.
 
@@ -309,7 +309,7 @@ class SQLiteModelManager(ModelManager):
 		:rtype:		list
 		"""
 		q = str(self.q)
-		db_results = self._connector.fetch(q)
+		db_results = await self._connector.fetch(q)
 
 		results = []
 
@@ -322,7 +322,9 @@ class SQLiteModelManager(ModelManager):
 			results.append(model)
 
 		self.q = (
-			QueryBuilder().SELECT(*self._model_fields).FROM(self.model_class.table_name)
+			await QueryBuilder()
+			.SELECT(*self._model_fields)
+			.FROM(self.model_class.table_name)
 		)
 
 		return results
@@ -344,7 +346,7 @@ class MultiModelManager(ABC):
 		self.database_name = database_name
 
 	@abstractmethod
-	def add_model(self, model: "Model"):
+	async def add_model(self, model: "Model"):
 		"""
 		Adds a model.
 
@@ -357,7 +359,7 @@ class MultiModelManager(ABC):
 		}
 
 	@abstractmethod
-	def remove_model_by_name(self, model_name: str):
+	async def remove_model_by_name(self, model_name: str):
 		"""
 		Removes a model by name.
 
@@ -370,7 +372,7 @@ class MultiModelManager(ABC):
 			logger.error(f'Not found model "{model_name}"')
 
 	@abstractmethod
-	def model_manager(self, model_name: str) -> "ModelManager":
+	async def model_manager(self, model_name: str) -> "ModelManager":
 		"""
 		Get model manager
 
@@ -389,7 +391,7 @@ class MultiModelManager(ABC):
 		return model["manager"]
 
 	@abstractmethod
-	def model(self, model_name: str) -> "Model":
+	async def model(self, model_name: str) -> "Model":
 		"""
 		Model
 
@@ -423,7 +425,7 @@ class SQLiteMultiModelManager(MultiModelManager):
 		self.models = {}
 		self.database_name = database_name
 
-	def add_model(self, model: "Model"):
+	async def add_model(self, model: "Model"):
 		"""
 		Adds a model.
 
@@ -436,7 +438,7 @@ class SQLiteMultiModelManager(MultiModelManager):
 			"manager": SQLiteModelManager(model, self.database_name),
 		}
 
-	def remove_model_by_name(self, model_name: str):
+	async def remove_model_by_name(self, model_name: str):
 		"""
 		Removes a model by name.
 
@@ -449,7 +451,7 @@ class SQLiteMultiModelManager(MultiModelManager):
 		except KeyError:
 			logger.error(f'Not found model "{model_name}"')
 
-	def model_manager(self, model_name: str) -> "ModelManager":
+	async def model_manager(self, model_name: str) -> "ModelManager":
 		"""
 		Get model manager
 
@@ -467,7 +469,7 @@ class SQLiteMultiModelManager(MultiModelManager):
 
 		return model["manager"]
 
-	def model(self, model_name: str) -> "Model":
+	async def model(self, model_name: str) -> "Model":
 		"""
 		Get model
 
@@ -492,7 +494,7 @@ class MultiManager(ABC):
 	"""
 
 	@abstractmethod
-	def reconnect(self):
+	async def reconnect(self):
 		"""
 		reconnect to db
 
@@ -501,7 +503,7 @@ class MultiManager(ABC):
 		raise NotImplementedError()
 
 	@abstractmethod
-	def drop_table(self, table_name: str):
+	async def drop_table(self, table_name: str):
 		"""
 		Drop sql table
 
@@ -513,7 +515,7 @@ class MultiManager(ABC):
 		raise NotImplementedError()
 
 	@abstractmethod
-	def close_connection(self):
+	async def close_connection(self):
 		"""
 		Closes a connection.
 
@@ -522,7 +524,7 @@ class MultiManager(ABC):
 		raise NotImplementedError()
 
 	@abstractmethod
-	def insert(
+	async def insert(
 		self,
 		table_name: str,
 		formatted_fields: dict,
@@ -549,7 +551,7 @@ class MultiManager(ABC):
 		raise NotImplementedError()
 
 	@abstractmethod
-	def update(self, table_name: str, key: str, orig_field: str, new_value: str):
+	async def update(self, table_name: str, key: str, orig_field: str, new_value: str):
 		"""
 		update model
 
@@ -567,7 +569,7 @@ class MultiManager(ABC):
 		raise NotImplementedError()
 
 	@abstractmethod
-	def filter(self, query: QueryBuilder):
+	async def filter(self, query: QueryBuilder):
 		"""
 		filter and get model by query
 
@@ -579,7 +581,7 @@ class MultiManager(ABC):
 		raise NotImplementedError()
 
 	@abstractmethod
-	def commit(self):
+	async def commit(self):
 		"""
 		Commit changes
 
@@ -588,7 +590,7 @@ class MultiManager(ABC):
 		raise NotImplementedError()
 
 	@abstractmethod
-	def create_table(self, table_name: str, fields: dict):
+	async def create_table(self, table_name: str, fields: dict):
 		"""
 		Creates a table.
 
@@ -602,7 +604,7 @@ class MultiManager(ABC):
 		raise NotImplementedError()
 
 	@abstractmethod
-	def delete(self, table_name: str, field_name: str, field_value: Any):
+	async def delete(self, table_name: str, field_name: str, field_value: Any):
 		"""
 		delete model
 
@@ -632,20 +634,22 @@ class SQLiteMultiManager(MultiManager):
 		"""
 		self._connector = SQLiteDBConnector()
 		self.database_name = database_name
-		self._connector.connect(self.database_name)
+		await self._connector.connect(self.database_name)
 
-	def execute(self, raw_sql_query: str, values: tuple = (), get_cursor: bool = False):
-		return self._connector.fetch(raw_sql_query, values, get_cursor)
+	async def execute(
+		self, raw_sql_query: str, values: tuple = (), get_cursor: bool = False
+	):
+		return await self._connector.fetch(raw_sql_query, values, get_cursor)
 
-	def reconnect(self, database_file: str = None):
+	async def reconnect(self, database_file: str = None):
 		"""
 		reconnect to database
 		"""
 		if database_file is not None:
 			self.database_name = database_file
-		self._connector.connect(self.database_name)
+		await self._connector.connect(self.database_name)
 
-	def drop_table(self, table_name: str):
+	async def drop_table(self, table_name: str):
 		"""
 		drop table
 
@@ -656,16 +660,16 @@ class SQLiteMultiManager(MultiManager):
 
 		logger.warning(f"Drop table: {table_name}")
 
-		self._connector.fetch(query)
-		self._connector.commit()
+		await self._connector.fetch(query)
+		await self._connector.commit()
 
-	def close_connection(self):
+	async def close_connection(self):
 		"""
 		Closes a connection.
 		"""
-		self._connector.close_connection()
+		await self._connector.close_connection()
 
-	def insert(
+	async def insert(
 		self,
 		table_name: str,
 		formatted_fields: dict,
@@ -709,9 +713,9 @@ class SQLiteMultiManager(MultiManager):
 			f'[{table_name}] Insert {"(or ignore)" if ignore else ""} new model into database'
 		)
 
-		self._connector.fetch(query, values)
+		await self._connector.fetch(query, values)
 
-	def update(self, table_name: str, key: str, orig_field: str, new_value: str):
+	async def update(self, table_name: str, key: str, orig_field: str, new_value: str):
 		"""
 		Update fields in database table
 
@@ -728,9 +732,9 @@ class SQLiteMultiManager(MultiManager):
 
 		logger.info(f"[{table_name}] Update model: {key}={new_value}")
 
-		self._connector.fetch(query, (new_value, orig_field))
+		await self._connector.fetch(query, (new_value, orig_field))
 
-	def filter(self, query: str) -> list:
+	async def filter(self, query: str) -> list:
 		"""
 		filter and get model by query
 
@@ -740,17 +744,17 @@ class SQLiteMultiManager(MultiManager):
 		:returns:	models
 		:rtype:		list
 		"""
-		result = self._connector.fetch(query)
+		result = await self._connector.fetch(query)
 
 		return result
 
-	def commit(self):
+	async def commit(self):
 		"""
 		Commits changes.
 		"""
-		self._connector.commit()
+		await self._connector.commit()
 
-	def create_table(self, table_name: str, fields: dict):
+	async def create_table(self, table_name: str, fields: dict):
 		"""
 		Creates a table.
 
@@ -771,10 +775,10 @@ class SQLiteMultiManager(MultiManager):
 
 		logger.info(f"Create new table: {table_name}")
 
-		self._connector.fetch(query)
-		self._connector.commit()
+		await self._connector.fetch(query)
+		await self._connector.commit()
 
-	def delete(self, table_name: str, field_name: str, field_value: Any):
+	async def delete(self, table_name: str, field_name: str, field_value: Any):
 		"""
 		Delete model from database
 
@@ -788,4 +792,4 @@ class SQLiteMultiManager(MultiManager):
 		query = f"DELETE FROM {table_name} WHERE {field_name} = ?"
 		logger.info(f"[{table_name}] Delete model ({field_name}={field_value})")
 
-		self._connector.fetch(query, (field_value,))
+		await self._connector.fetch(query, (field_value,))

@@ -16,7 +16,7 @@ class MigrationManager(ABC):
 	"""
 
 	@abstractmethod
-	def get_current_table_columns(self, table_name: str):
+	async def get_current_table_columns(self, table_name: str):
 		"""
 		Gets the current table columns.
 
@@ -28,7 +28,7 @@ class MigrationManager(ABC):
 		raise NotImplementedError()
 
 	@abstractmethod
-	def get_table_columns_from_model(self, model: "Model"):
+	async def get_table_columns_from_model(self, model: "Model"):
 		"""
 		Gets the table columns from model.
 
@@ -40,7 +40,7 @@ class MigrationManager(ABC):
 		raise NotImplementedError()
 
 	@abstractmethod
-	def revert_migration(self, index_key: int = -1):
+	async def revert_migration(self, index_key: int = -1):
 		"""
 		Revert migration
 
@@ -72,7 +72,7 @@ class SQLiteMigrationManager(MigrationManager):
 		self.migrations = {}
 		self.migrations_file = "sqlsymphony_migrates.json"
 
-	def get_current_table_columns(self, table_name: str) -> list:
+	async def get_current_table_columns(self, table_name: str) -> list:
 		"""
 		Gets the current table columns.
 
@@ -82,13 +82,15 @@ class SQLiteMigrationManager(MigrationManager):
 		:returns:	The current table columns.
 		:rtype:		list
 		"""
-		data = self.session.execute(f"SELECT * FROM {table_name}", get_cursor=True)
+		data = await self.session.execute(
+			f"SELECT * FROM {table_name}", get_cursor=True
+		)
 		cursor = data[0]
 		fieldnames = [field[0] for field in cursor.description]
 
 		return fieldnames
 
-	def get_table_columns_from_model(self, model: "Model") -> list:
+	async def get_table_columns_from_model(self, model: "Model") -> list:
 		"""
 		Gets the table columns from model.
 
@@ -100,17 +102,17 @@ class SQLiteMigrationManager(MigrationManager):
 		"""
 		return [key for key in model._original_fields.keys()]
 
-	def upload_migrations_file(self):
+	async def upload_migrations_file(self):
 		logger.debug(f"Load JSON migrations history file: {self.migrations_file}")
-		with open(self.migrations_file, "r") as read_file:
+		async with open(self.migrations_file, "r") as read_file:
 			self.migrations = json.load(read_file)
 
-	def update_migrations_file(self):
+	async def update_migrations_file(self):
 		logger.debug(f"Update JSON migrations history file: {self.migrations_file}")
-		with open(self.migrations_file, "w") as write_file:
+		async with open(self.migrations_file, "w") as write_file:
 			json.dump(self.migrations, write_file, indent=4)
 
-	def migrate_from_model(
+	async def migrate_from_model(
 		self,
 		old_model: Union["SessionModel", "Model"],
 		new_model: Union["SessionModel", "Model"],
@@ -148,7 +150,7 @@ class SQLiteMigrationManager(MigrationManager):
 		old_fields = set(
 			[
 				f"{field_name} {field_params}"
-				for field_name, field_params in old_model._class_get_formatted_sql_fields(
+				for field_name, field_params in await old_model._class_get_formatted_sql_fields(
 					skip_primary_key=False
 				).items()
 			]
@@ -156,7 +158,7 @@ class SQLiteMigrationManager(MigrationManager):
 		new_fields = set(
 			[
 				f"{field_name} {field_params}"
-				for field_name, field_params in new_model._class_get_formatted_sql_fields(
+				for field_name, field_params in await new_model._class_get_formatted_sql_fields(
 					skip_primary_key=False
 				).items()
 			]
@@ -188,7 +190,7 @@ class SQLiteMigrationManager(MigrationManager):
 		shutil.copyfile(self.session.database_file, migrationfile)
 
 		if Path(self.migrations_file).exists():
-			self.upload_migrations_file()
+			await self.upload_migrations_file()
 
 		self.migrations[str(len(self.migrations) + 1)] = {
 			"migrationfile": migrationfile,
@@ -203,24 +205,24 @@ class SQLiteMigrationManager(MigrationManager):
 			},
 		}
 
-		self.update_migrations_file()
+		await self.update_migrations_file()
 
 		for sql_query in sql_queries:
 			logger.debug(f"[Migration] Execute sql query: {sql_query}")
 
 			try:
-				self.session.execute(sql_query)
+				await self.session.execute(sql_query)
 			except Exception as ex:
 				raise MigrationError(str(ex))
 
-	def revert_migration(self, index_key: int = -1):
+	async def revert_migration(self, index_key: int = -1):
 		"""
 		Revert migration
 
 		:param		index_key:	The index key
 		:type		index_key:	int
 		"""
-		self.upload_migrations_file()
+		await self.upload_migrations_file()
 
 		if index_key == -1:
 			index_key = [k for k in self.migrations.keys()][-1]

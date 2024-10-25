@@ -30,7 +30,9 @@ class MetaSessionModel(type):
 
 	__tablename__ = None
 
-	def __new__(cls, class_object: "SessionModel", parents: tuple, attributes: dict):
+	async def __new__(
+		cls, class_object: "SessionModel", parents: tuple, attributes: dict
+	):
 		"""
 		Magic method for creating instances and classes
 
@@ -80,7 +82,7 @@ class SessionModel(metaclass=MetaSessionModel):
 	__tablename__ = None
 	_ids = 0
 
-	def __init__(self, **kwargs):
+	async def __init__(self, **kwargs):
 		"""
 		Constructs a new instance.
 
@@ -136,7 +138,7 @@ class SessionModel(metaclass=MetaSessionModel):
 
 		self._last_action = {}
 
-	def add_hook(self, before_action: str, func: Callable, func_args: tuple = ()):
+	async def add_hook(self, before_action: str, func: Callable, func_args: tuple = ()):
 		"""
 		Adds a hook.
 
@@ -163,7 +165,7 @@ class SessionModel(metaclass=MetaSessionModel):
 		self.hooks[before_action.lower()] = {"function": func, "args": func_args}
 
 	@property
-	def pk(self) -> Any:
+	async def pk(self) -> Any:
 		"""
 		Get primary key value
 
@@ -172,7 +174,7 @@ class SessionModel(metaclass=MetaSessionModel):
 		"""
 		return self._primary_key["value"]
 
-	def view_table_info(self):
+	async def view_table_info(self):
 		"""
 		View info about Model in table
 		"""
@@ -192,7 +194,9 @@ class SessionModel(metaclass=MetaSessionModel):
 		console.print(table)
 
 	@classmethod
-	def _class_get_formatted_sql_fields(cls, skip_primary_key: bool = False) -> dict:
+	async def _class_get_formatted_sql_fields(
+		cls, skip_primary_key: bool = False
+	) -> dict:
 		"""
 		Gets the formatted sql fields.
 
@@ -205,21 +209,23 @@ class SessionModel(metaclass=MetaSessionModel):
 			if field.primary_key and skip_primary_key:
 				continue
 
-			model_fields[field_name] = field.to_sql_type()
+			model_fields[field_name] = await field.to_sql_type()
 
 			if field.primary_key:
-				model_fields[field_name] = f"{field.to_sql_type()} PRIMARY KEY"
+				model_fields[field_name] = f"{await field.to_sql_type()} PRIMARY KEY"
 			else:
 				if not field.null:
 					try:
 						model_fields[field_name] += " NOT NULL"
 					except KeyError:
-						model_fields[field_name] = f"{field.to_sql_type()} NOT NULL"
+						model_fields[field_name] = (
+							f"{await field.to_sql_type()} NOT NULL"
+						)
 				if field.unique:
 					try:
 						model_fields[field_name] += " UNIQUE"
 					except KeyError:
-						model_fields[field_name] = f"{field.to_sql_type()} UNIQUE"
+						model_fields[field_name] = f"{await field.to_sql_type()} UNIQUE"
 				if field.default is not None:
 					try:
 						model_fields[field_name] += f" DEFAULT {field.default}"
@@ -230,7 +236,7 @@ class SessionModel(metaclass=MetaSessionModel):
 
 		return model_fields
 
-	def get_formatted_sql_fields(self, skip_primary_key: bool = False) -> dict:
+	async def get_formatted_sql_fields(self, skip_primary_key: bool = False) -> dict:
 		"""
 		Gets the formatted sql fields.
 
@@ -243,21 +249,23 @@ class SessionModel(metaclass=MetaSessionModel):
 			if field.primary_key and skip_primary_key:
 				continue
 
-			model_fields[field_name] = field.to_sql_type()
+			model_fields[field_name] = await field.to_sql_type()
 
 			if field.primary_key:
-				model_fields[field_name] = f"{field.to_sql_type()} PRIMARY KEY"
+				model_fields[field_name] = f"{await field.to_sql_type()} PRIMARY KEY"
 			else:
 				if not field.null:
 					try:
 						model_fields[field_name] += " NOT NULL"
 					except KeyError:
-						model_fields[field_name] = f"{field.to_sql_type()} NOT NULL"
+						model_fields[field_name] = (
+							f"{await field.to_sql_type()} NOT NULL"
+						)
 				if field.unique:
 					try:
 						model_fields[field_name] += " UNIQUE"
 					except KeyError:
-						model_fields[field_name] = f"{field.to_sql_type()} UNIQUE"
+						model_fields[field_name] = f"{await field.to_sql_type()} UNIQUE"
 				if field.default is not None:
 					try:
 						model_fields[field_name] += f" DEFAULT {field.default}"
@@ -275,21 +283,21 @@ class Session(ABC):
 	"""
 
 	@abstractmethod
-	def reconnect(self):
+	async def reconnect(self):
 		"""
 		reconnect to database
 		"""
 		raise NotImplementedError
 
 	@abstractmethod
-	def get_all(self):
+	async def get_all(self):
 		"""
 		Gets all models
 		"""
 		raise NotImplementedError
 
 	@abstractmethod
-	def get_all_by_model(self, needed_model: SessionModel):
+	async def get_all_by_model(self, needed_model: SessionModel):
 		"""
 		Gets all models by module.
 
@@ -299,7 +307,7 @@ class Session(ABC):
 		raise NotImplementedError
 
 	@abstractmethod
-	def drop_table(self, table_name: str):
+	async def drop_table(self, table_name: str):
 		"""
 		drop table
 
@@ -309,7 +317,7 @@ class Session(ABC):
 		raise NotImplementedError
 
 	@abstractmethod
-	def filter(self, query: "QueryBuilder", first: bool = False):
+	async def filter(self, query: "QueryBuilder", first: bool = False):
 		"""
 		Filter and get models by query
 
@@ -321,7 +329,7 @@ class Session(ABC):
 		raise NotImplementedError
 
 	@abstractmethod
-	def update(self, model: SessionModel, **kwargs):
+	async def update(self, model: SessionModel, **kwargs):
 		"""
 		Update model
 
@@ -333,7 +341,7 @@ class Session(ABC):
 		raise NotImplementedError
 
 	@abstractmethod
-	def add(self, model: SessionModel, ignore: bool = False):
+	async def add(self, model: SessionModel, ignore: bool = False):
 		"""
 		Add model
 
@@ -345,7 +353,7 @@ class Session(ABC):
 		raise NotImplementedError
 
 	@abstractmethod
-	def delete(self, model: SessionModel):
+	async def delete(self, model: SessionModel):
 		"""
 		Deletes the given model.
 
@@ -355,14 +363,14 @@ class Session(ABC):
 		raise NotImplementedError
 
 	@abstractmethod
-	def commit(self):
+	async def commit(self):
 		"""
 		Commit changes
 		"""
 		raise NotImplementedError
 
 	@abstractmethod
-	def close(self):
+	async def close(self):
 		"""
 		Close connection
 		"""
@@ -376,7 +384,7 @@ class SQLiteSession(Session):
 
 	def __init__(self, database_file: str):
 		"""
-		Constructs a new instance.
+		Constructs a new session instance.
 
 		:param		database_file:	The database file
 		:type		database_file:	str
@@ -387,16 +395,16 @@ class SQLiteSession(Session):
 		self.audit_manager = AuditManager(InMemoryAuditStorage())
 		self.audit_manager.attach(BasicChangeObserver())
 
-	def reconnect(self, database_file: str = None):
+	async def reconnect(self, database_file: str = None):
 		"""
 		Reconnecto to database
 		"""
 		if database_file is not None:
 			self.database_file = Path(database_file)
 		logger.info(f"Session {self.database_file}: reconnect")
-		self.manager.reconnect(database_file)
+		await self.manager.reconnect(database_file)
 
-	def execute(
+	async def execute(
 		self, raw_sql_query: str, values: tuple = (), get_cursor: bool = False
 	) -> list:
 		"""
@@ -412,9 +420,10 @@ class SQLiteSession(Session):
 		:returns:	list with output data
 		:rtype:		list
 		"""
-		return self.manager.execute(raw_sql_query, values, get_cursor)
+		result = await self.manager.execute(raw_sql_query, values, get_cursor)
+		return result
 
-	def get_all(self) -> List[SessionModel]:
+	async def get_all(self) -> List[SessionModel]:
 		"""
 		Gets all.
 
@@ -424,7 +433,7 @@ class SQLiteSession(Session):
 		models_instances = [self.models[model]["model"] for model in self.models.keys()]
 		return models_instances
 
-	def get_all_by_model(self, needed_model: SessionModel) -> List[SessionModel]:
+	async def get_all_by_model(self, needed_model: SessionModel) -> List[SessionModel]:
 		"""
 		Gets all by module.
 
@@ -444,10 +453,12 @@ class SQLiteSession(Session):
 
 		if len(needed_instances) < 1:
 			models_tuple = self.manager.filter(
-				str(QueryBuilder().SELECT("*").FROM(needed_model.table_name))
+				str(await QueryBuilder().SELECT("*").FROM(needed_model.table_name))
 			)
+
 			if len(models_tuple) < 1:
 				return
+
 			fields = [
 				{
 					f"{field_name}": models_tuple[i][num]
@@ -474,7 +485,7 @@ class SQLiteSession(Session):
 
 		return needed_instances
 
-	def drop_table(self, table_name: str):
+	async def drop_table(self, table_name: str):
 		"""
 		Drop table
 
@@ -482,9 +493,9 @@ class SQLiteSession(Session):
 		:type		table_name:	 str
 		"""
 		logger.info(f"Session {self.database_file}: drop table {table_name}")
-		self.manager.drop_table(table_name)
+		await self.manager.drop_table(table_name)
 
-	def filter(
+	async def filter(
 		self, query: "QueryBuilder", first: bool = False
 	) -> Union[List[SessionModel], SessionModel]:
 		"""
@@ -498,7 +509,7 @@ class SQLiteSession(Session):
 		:returns:	list with SessionModel or SessionModel
 		:rtype:		Union[List[SessionModel], SessionModel]
 		"""
-		db_results = self.manager.filter(str(query))
+		db_results = await self.manager.filter(str(query))
 		results = []
 		fields = {}
 
@@ -525,7 +536,7 @@ class SQLiteSession(Session):
 		else:
 			return None
 
-	def update(self, model: SessionModel, **kwargs):
+	async def update(self, model: SessionModel, **kwargs):
 		"""
 		Update model
 
@@ -534,24 +545,24 @@ class SQLiteSession(Session):
 		:param		kwargs:	 The keywords arguments
 		:type		kwargs:	 dictionary
 		"""
-		current_model = self.models.get(model.unique_id, None)
+		current_model = await self.models.get(model.unique_id, None)
 
 		if current_model is None:
-			self.add(model)
+			await self.add(model)
 
 		logger.info(f"Session {self.database_file}: update model {model.unique_id}")
 
 		if model.hooks:
 			func = model.hooks["update"]["function"]
 			logger.debug(f"Exec Model Hook[update]: {func.__name__}")
-			func(*model.hooks["update"]["args"])
+			await func(*model.hooks["update"]["args"])
 
 		for key, value in kwargs.items():
 			if hasattr(model, key):
 				if value is not None and model._original_fields[key].validate(value):
 					orig_field = getattr(model, key)
 					setattr(model, key, model._original_fields[key].to_db_value(value))
-					self.audit_manager.track_changes(
+					await self.audit_manager.track_changes(
 						model._model_name,
 						model.table_name,
 						model.pk,
@@ -559,8 +570,8 @@ class SQLiteSession(Session):
 						orig_field,
 						value,
 					)
-					self.manager.update(model.table_name, key, orig_field, value)
-					self.audit_manager.track_changes(
+					await self.manager.update(model.table_name, key, orig_field, value)
+					await self.audit_manager.track_changes(
 						model._model_name,
 						model.table_name,
 						model.pk,
@@ -574,7 +585,7 @@ class SQLiteSession(Session):
 
 		self.models[model.unique_id]["model"] = model
 
-	def add(self, model: SessionModel, ignore: bool = False):
+	async def add(self, model: SessionModel, ignore: bool = False):
 		"""
 		Add new model
 
@@ -583,18 +594,18 @@ class SQLiteSession(Session):
 		:param		ignore:	 The ignore
 		:type		ignore:	 bool
 		"""
-		if self.models.get(model.unique_id, None) is not None:
+		if await self.models.get(model.unique_id, None) is not None:
 			logger.warning(f"Model {model.unique_id} already added")
 			return
 
 		if model.hooks:
 			func = model.hooks["save"]["function"]
 			logger.debug(f"Exec Model Hook[save]: {func.__name__}")
-			func(*model.hooks["save"]["args"])
+			await func(*model.hooks["save"]["args"])
 
 		self.models[model.unique_id] = {"model": model}
 
-		self.audit_manager.track_changes(
+		await self.audit_manager.track_changes(
 			model._model_name,
 			model.table_name,
 			model.unique_id,
@@ -603,13 +614,17 @@ class SQLiteSession(Session):
 			model._model_name,
 		)
 
-		formatted_fields = model.get_formatted_sql_fields(skip_primary_key=True)
+		formatted_fields = await model.get_formatted_sql_fields(skip_primary_key=True)
 
-		self.manager.create_table(model.table_name, model.get_formatted_sql_fields())
+		await self.manager.create_table(
+			model.table_name, model.get_formatted_sql_fields()
+		)
 
-		self.manager.insert(model.table_name, formatted_fields, model.pk, model, ignore)
+		await self.manager.insert(
+			model.table_name, formatted_fields, model.pk, model, ignore
+		)
 
-		last_pk = self.execute(
+		last_pk = await self.execute(
 			f'SELECT max({model._primary_key["field_name"]}) FROM {model.table_name}'
 		)
 
@@ -619,14 +634,14 @@ class SQLiteSession(Session):
 			f"Session {self.database_file}: insert new model: {model.unique_id}"
 		)
 
-	def delete(self, model: SessionModel):
+	async def delete(self, model: SessionModel):
 		"""
 		Deletes the given model.
 
 		:param		model:	The model
 		:type		model:	SessionModel
 		"""
-		current_model = self.models.get(model.unique_id, None)
+		current_model = await self.models.get(model.unique_id, None)
 
 		if current_model is None:
 			logger.error(f"Model {model.unique_id} does not exists")
@@ -635,9 +650,9 @@ class SQLiteSession(Session):
 		if model.hooks:
 			func = model.hooks["delete"]["function"]
 			logger.debug(f"Exec Model Hook[delete]: {func.__name__}")
-			func(*model.hooks["delete"]["args"])
+			await func(*model.hooks["delete"]["args"])
 
-		self.audit_manager.track_changes(
+		await self.audit_manager.track_changes(
 			current_model["model"]._model_name,
 			current_model["model"].table_name,
 			current_model["model"].pk,
@@ -646,7 +661,7 @@ class SQLiteSession(Session):
 			"<DELETED>",
 		)
 
-		self.manager.delete(
+		await self.manager.delete(
 			current_model["model"].table_name,
 			current_model["model"]._primary_key["field_name"],
 			current_model["model"].pk,
@@ -654,14 +669,14 @@ class SQLiteSession(Session):
 
 		logger.info(f"Session {self.database_file}: delete model: {model.unique_id}")
 
-	def commit(self):
+	async def commit(self):
 		"""
 		Commit changes
 		"""
-		self.manager.commit()
+		await self.manager.commit()
 
-	def close(self):
+	async def close(self):
 		"""
 		Close connection
 		"""
-		self.manager.close_connection()
+		await self.manager.close_connection()

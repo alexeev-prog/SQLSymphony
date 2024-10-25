@@ -29,8 +29,8 @@ class BaseDataType(ABC):
 		:type		unique:		  bool
 		:param		null:		  The null
 		:type		null:		  bool
-		:param		default:	  The default
-		:type		default:	  Any
+		:param		async default:	  The default
+		:type		async default:	  Any
 		"""
 		self.primary_key: bool = primary_key
 		self.unique: bool = unique
@@ -38,7 +38,7 @@ class BaseDataType(ABC):
 		self.default: Any = default
 
 	@abstractmethod
-	def validate(self, value: Any) -> bool:
+	async def validate(self, value: Any) -> bool:
 		"""
 		Validate value for current datatype
 
@@ -51,7 +51,7 @@ class BaseDataType(ABC):
 		raise NotImplementedError()
 
 	@abstractmethod
-	def to_db_value(self, value: Any) -> Any:
+	async def to_db_value(self, value: Any) -> Any:
 		"""
 		convert to db value
 
@@ -64,7 +64,7 @@ class BaseDataType(ABC):
 		raise NotImplementedError()
 
 	@abstractmethod
-	def from_db_value(self, value: Any) -> Any:
+	async def from_db_value(self, value: Any) -> Any:
 		"""
 		convert from db value
 
@@ -77,7 +77,7 @@ class BaseDataType(ABC):
 		raise NotImplementedError()
 
 	@abstractmethod
-	def view_table_info(self):
+	async def view_table_info(self):
 		"""
 		View info in table view
 		"""
@@ -95,7 +95,7 @@ class BaseDataType(ABC):
 		console.print(table)
 
 	@abstractmethod
-	def to_sql_type(self) -> str:
+	async def to_sql_type(self) -> str:
 		"""
 		Returns a sql type representation of the object.
 
@@ -132,8 +132,8 @@ class SlugField(BaseDataType):
 		:type		unique:		  bool
 		:param		null:		  The null
 		:type		null:		  bool
-		:param		default:	  The default
-		:type		default:	  Any
+		:param		async default:	  The default
+		:type		async default:	  Any
 		"""
 		self.primary_key: bool = primary_key
 		self.unique: bool = unique
@@ -144,7 +144,7 @@ class SlugField(BaseDataType):
 
 		self.slug_generator = SlugGenerator()
 
-	def to_sql_type(self) -> str:
+	async def to_sql_type(self) -> str:
 		"""
 		Returns a sql type representation of the object.
 
@@ -153,7 +153,7 @@ class SlugField(BaseDataType):
 		"""
 		return f"VARCHAR({self.max_length})"
 
-	def validate(self, value: Any) -> bool:
+	async def validate(self, value: Any) -> bool:
 		"""
 		Validate value
 
@@ -171,7 +171,7 @@ class SlugField(BaseDataType):
 
 		return len(value) <= self.max_length
 
-	def to_db_value(self, value: Any) -> str:
+	async def to_db_value(self, value: Any) -> str:
 		"""
 		Convert value to db
 
@@ -182,12 +182,12 @@ class SlugField(BaseDataType):
 		:rtype:		str
 		"""
 		return (
-			str(self.slug_generator.generate_slug(value))
+			str(await self.slug_generator.generate_slug(value))
 			if value is not None
 			else self.default
 		)
 
-	def from_db_value(self, value: Any) -> str:
+	async def from_db_value(self, value: Any) -> str:
 		"""
 		Convert value from db
 
@@ -198,12 +198,12 @@ class SlugField(BaseDataType):
 		:rtype:		str
 		"""
 		return (
-			str(self.slug_generator.generate_slug(value))
+			str(await self.slug_generator.generate_slug(value))
 			if value is not None
 			else self.default
 		)
 
-	def view_table_info(self):
+	async def view_table_info(self):
 		"""
 		View info in table view
 		"""
@@ -248,8 +248,8 @@ class IntegerField(BaseDataType):
 		:type		unique:		  bool
 		:param		null:		  The null
 		:type		null:		  bool
-		:param		default:	  The default
-		:type		default:	  int
+		:param		async default:	  The default
+		:type		async default:	  int
 		"""
 		self.primary_key = primary_key
 		self.unique: bool = unique
@@ -266,7 +266,7 @@ class IntegerField(BaseDataType):
 			self.default = 1
 			self.value = 1
 
-	def validate(self, value: Any) -> bool:
+	async def validate(self, value: Any) -> bool:
 		"""
 		Validate value
 
@@ -287,7 +287,7 @@ class IntegerField(BaseDataType):
 
 		return True
 
-	def to_db_value(self, value: Any) -> int:
+	async def to_db_value(self, value: Any) -> int:
 		"""
 		Convert to db value
 
@@ -302,7 +302,7 @@ class IntegerField(BaseDataType):
 
 		return int(value) if value is not None else self.default
 
-	def from_db_value(self, value: Any) -> int:
+	async def from_db_value(self, value: Any) -> int:
 		"""
 		Convert from db value
 
@@ -314,7 +314,7 @@ class IntegerField(BaseDataType):
 		"""
 		return int(value) if value is not None else None
 
-	def view_table_info(self):
+	async def view_table_info(self):
 		"""
 		View info in table view
 		"""
@@ -332,7 +332,7 @@ class IntegerField(BaseDataType):
 		console = Console()
 		console.print(table)
 
-	def to_sql_type(self) -> str:
+	async def to_sql_type(self) -> str:
 		return "INTEGER"
 
 	def __str__(self):
@@ -362,8 +362,8 @@ class RealField(BaseDataType):
 		:type		unique:		  bool
 		:param		null:		  The null
 		:type		null:		  bool
-		:param		default:	  The default
-		:type		default:	  float
+		:param		async default:	  The default
+		:type		async default:	  float
 		"""
 		self.primary_key = False
 		self.unique: bool = unique
@@ -373,7 +373,7 @@ class RealField(BaseDataType):
 		self.min_value = min_value
 		self.max_value = max_value
 
-	def validate(self, value: Any) -> bool:
+	async def validate(self, value: Any) -> bool:
 		"""
 		Validate value
 
@@ -394,7 +394,7 @@ class RealField(BaseDataType):
 
 		return True
 
-	def to_db_value(self, value: Any) -> float:
+	async def to_db_value(self, value: Any) -> float:
 		"""
 		Convert to db value
 
@@ -406,7 +406,7 @@ class RealField(BaseDataType):
 		"""
 		return float(value) if value is not None else self.default
 
-	def from_db_value(self, value: Any) -> float:
+	async def from_db_value(self, value: Any) -> float:
 		"""
 		Convert from db value
 
@@ -418,7 +418,7 @@ class RealField(BaseDataType):
 		"""
 		return float(value) if value is not None else None
 
-	def view_table_info(self):
+	async def view_table_info(self):
 		"""
 		View info in table view
 		"""
@@ -436,7 +436,7 @@ class RealField(BaseDataType):
 		console = Console()
 		console.print(table)
 
-	def to_sql_type(self) -> str:
+	async def to_sql_type(self) -> str:
 		return "REAL"
 
 	def __str__(self):
@@ -464,8 +464,8 @@ class CharField(BaseDataType):
 		:type		unique:		  bool
 		:param		null:		  The null
 		:type		null:		  bool
-		:param		default:	  The default
-		:type		default:	  Any
+		:param		async default:	  The default
+		:type		async default:	  Any
 		"""
 		self.primary_key: bool = False
 		self.unique: bool = unique
@@ -474,10 +474,10 @@ class CharField(BaseDataType):
 
 		self.max_length = max_length
 
-	def to_sql_type(self) -> str:
+	async def to_sql_type(self) -> str:
 		return f"VARCHAR({self.max_length})"
 
-	def validate(self, value: Any) -> bool:
+	async def validate(self, value: Any) -> bool:
 		"""
 		Validate value
 
@@ -495,7 +495,7 @@ class CharField(BaseDataType):
 
 		return len(value) <= self.max_length
 
-	def to_db_value(self, value: Any) -> str:
+	async def to_db_value(self, value: Any) -> str:
 		"""
 		Convert value to db
 
@@ -507,7 +507,7 @@ class CharField(BaseDataType):
 		"""
 		return str(value) if value is not None else self.default
 
-	def from_db_value(self, value: Any) -> str:
+	async def from_db_value(self, value: Any) -> str:
 		"""
 		Convert value from db
 
@@ -519,7 +519,7 @@ class CharField(BaseDataType):
 		"""
 		return str(value) if value is not None else self.default
 
-	def view_table_info(self):
+	async def view_table_info(self):
 		"""
 		View info in table view
 		"""
@@ -560,18 +560,18 @@ class BooleanField(BaseDataType):
 		:type		unique:		  bool
 		:param		null:		  The null
 		:type		null:		  bool
-		:param		default:	  The default
-		:type		default:	  Any
+		:param		async default:	  The default
+		:type		async default:	  Any
 		"""
 		self.primary_key = False
 		self.unique: bool = unique
 		self.null: bool = null
 		self.default: Any = default
 
-	def to_sql_type(self) -> str:
+	async def to_sql_type(self) -> str:
 		return "BOOLEAN"
 
-	def validate(self, value: Any) -> bool:
+	async def validate(self, value: Any) -> bool:
 		"""
 		Validate value
 
@@ -586,7 +586,7 @@ class BooleanField(BaseDataType):
 		else:
 			return False
 
-	def to_db_value(self, value: Any) -> str:
+	async def to_db_value(self, value: Any) -> str:
 		"""
 		Convert to db value
 
@@ -598,7 +598,7 @@ class BooleanField(BaseDataType):
 		"""
 		return str(value).upper() if value is not None else self.default
 
-	def from_db_value(self, value: Any) -> str:
+	async def from_db_value(self, value: Any) -> str:
 		"""
 		Convert from db value
 
@@ -610,7 +610,7 @@ class BooleanField(BaseDataType):
 		"""
 		return str(value).upper() if value is not None else self.default
 
-	def view_table_info(self):
+	async def view_table_info(self):
 		"""
 		View info in table view
 		"""
@@ -649,18 +649,18 @@ class TextField(BaseDataType):
 		:type		unique:		  bool
 		:param		null:		  The null
 		:type		null:		  bool
-		:param		default:	  The default
-		:type		default:	  Any
+		:param		async default:	  The default
+		:type		async default:	  Any
 		"""
 		self.primary_key = False
 		self.unique: bool = unique
 		self.null: bool = null
 		self.default: Any = default
 
-	def to_sql_type(self) -> str:
+	async def to_sql_type(self) -> str:
 		return "TEXT"
 
-	def validate(self, value: Any) -> bool:
+	async def validate(self, value: Any) -> bool:
 		"""
 		Validate value
 
@@ -675,7 +675,7 @@ class TextField(BaseDataType):
 
 		return isinstance(value, str)
 
-	def to_db_value(self, value: Any) -> str:
+	async def to_db_value(self, value: Any) -> str:
 		"""
 		Convert to db value
 
@@ -687,7 +687,7 @@ class TextField(BaseDataType):
 		"""
 		return str(value) if value is not None else self.default
 
-	def from_db_value(self, value: Any) -> str:
+	async def from_db_value(self, value: Any) -> str:
 		"""
 		Convert from db value
 
@@ -699,7 +699,7 @@ class TextField(BaseDataType):
 		"""
 		return str(value) if value is not None else None
 
-	def view_table_info(self):
+	async def view_table_info(self):
 		"""
 		View info in table view
 		"""
@@ -741,8 +741,8 @@ class BlobField(BaseDataType):
 		:type		unique:		  bool
 		:param		null:		  The null
 		:type		null:		  bool
-		:param		default:	  The default
-		:type		default:	  Any
+		:param		async default:	  The default
+		:type		async default:	  Any
 		"""
 		self.primary_key = False
 		self.unique: bool = unique
@@ -751,10 +751,10 @@ class BlobField(BaseDataType):
 
 		self.max_size_in_bytes = max_size_in_bytes
 
-	def to_sql_type(self) -> str:
+	async def to_sql_type(self) -> str:
 		return "BLOB"
 
-	def validate(self, value: Any) -> bool:
+	async def validate(self, value: Any) -> bool:
 		"""
 		Validate value
 
@@ -772,7 +772,7 @@ class BlobField(BaseDataType):
 
 		return isinstance(value, bytes)
 
-	def to_db_value(self, value: Any) -> bytes:
+	async def to_db_value(self, value: Any) -> bytes:
 		"""
 		Convert to db value
 
@@ -784,7 +784,7 @@ class BlobField(BaseDataType):
 		"""
 		return bytes(value) if value is not None else self.default
 
-	def from_db_value(self, value: Any) -> bytes:
+	async def from_db_value(self, value: Any) -> bytes:
 		"""
 		Convert from db value
 
@@ -796,7 +796,7 @@ class BlobField(BaseDataType):
 		"""
 		return bytes(value) if value is not None else None
 
-	def view_table_info(self):
+	async def view_table_info(self):
 		"""
 		View info in table view
 		"""
@@ -822,7 +822,7 @@ class FieldMeta(type):
 	This class describes a field meta.
 	"""
 
-	def __new__(cls, name, bases, attrs):
+	async def __new__(cls, name, bases, attrs):
 		"""
 		New 'magic' func
 

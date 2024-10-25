@@ -115,9 +115,11 @@ class Model(metaclass=MetaModel):
 		self.fields = {}
 		self._hooks = {}
 		self.audit_manager = AuditManager(InMemoryAuditStorage())
-		self.audit_manager.attach(BasicChangeObserver())
+		await self.audit_manager.attach(BasicChangeObserver())
 
-		self.objects.create_table(self.table_name, self.get_formatted_sql_fields())
+		await self.objects.create_table(
+			self.table_name, self.get_formatted_sql_fields()
+		)
 
 		self.unique_id = str(uuid4())
 
@@ -175,25 +177,26 @@ class Model(metaclass=MetaModel):
 		"""
 		return self._primary_key["value"]
 
-	def commit(self):
+	async def commit(self):
 		"""
 		Commit changes
 		"""
 		logger.info(f"[{self.table_name}] Commit changes...")
-		self.objects.commit()
+		await self.objects.commit()
 
-	def get_audit_history(self) -> list:
+	async def get_audit_history(self) -> list:
 		"""
 		Get audit history
 
 		:returns:	The audit history.
 		:rtype:		List[AuditEntry]
 		"""
-		return self.audit_manager.get_audit_history(
+		result = await self.audit_manager.get_audit_history(
 			self._model_name, self.table_name, self.pk
 		)
+		return result
 
-	def view_table_info(self):
+	async def view_table_info(self):
 		"""
 		View info about Model in table
 		"""
@@ -212,7 +215,7 @@ class Model(metaclass=MetaModel):
 		console = Console()
 		console.print(table)
 
-	def add_hook(self, before_action: str, func: Callable, func_args: tuple = ()):
+	async def add_hook(self, before_action: str, func: Callable, func_args: tuple = ()):
 		"""
 		Adds a hook.
 
@@ -238,7 +241,7 @@ class Model(metaclass=MetaModel):
 
 		self._hooks[before_action.lower()] = {"function": func, "args": func_args}
 
-	def save(self, ignore: bool = False):
+	async def save(self, ignore: bool = False):
 		"""
 		CRUD function: save
 		"""
@@ -246,7 +249,7 @@ class Model(metaclass=MetaModel):
 		if self._hooks:
 			func = self._hooks["save"]["function"]
 			logger.debug(f"Exec Model Hook[save]: {func.__name__}")
-			func(*self._hooks["save"]["args"])
+			await func(*self._hooks["save"]["args"])
 		try:
 			self.objects.insert(
 				self.table_name, self.get_formatted_sql_fields(), self.pk, self, ignore
@@ -257,7 +260,7 @@ class Model(metaclass=MetaModel):
 			)
 			raise ex
 
-	def update(self, **kwargs):
+	async def update(self, **kwargs):
 		"""
 		Update sql query
 
@@ -269,8 +272,8 @@ class Model(metaclass=MetaModel):
 				if value is not None and self._original_fields[key].validate(value):
 					orig_field = getattr(self, key)
 					setattr(self, key, self._original_fields[key].to_db_value(value))
-					self.objects.update(self.table_name, key, orig_field, value)
-					self.audit_manager.track_changes(
+					await self.objects.update(self.table_name, key, orig_field, value)
+					await self.audit_manager.track_changes(
 						self._model_name,
 						self.table_name,
 						self.pk,
@@ -282,7 +285,7 @@ class Model(metaclass=MetaModel):
 						f"[{self.table_name}] Update {self._model_name}#{self.pk} {key}: {orig_field} -> {value}"
 					)
 
-	def delete(self, field_name: str = None, field_value: Any = None):
+	async def delete(self, field_name: str = None, field_value: Any = None):
 		"""
 		Delete model
 
@@ -295,14 +298,16 @@ class Model(metaclass=MetaModel):
 			logger.info(
 				f"[{self.table_name}] Delete model by {field_name}={field_value}"
 			)
-			self.objects.delete(self.table_name, field_name, field_value)
+			await self.objects.delete(self.table_name, field_name, field_value)
 			return
 
 		logger.info(
 			f'[{self.table_name}] Delete model {self._primary_key["field_name"]}={self.pk}'
 		)
-		self.objects.delete(self.table_name, self._primary_key["field_name"], self.pk)
-		self.audit_manager.track_changes(
+		await self.objects.delete(
+			self.table_name, self._primary_key["field_name"], self.pk
+		)
+		await self.audit_manager.track_changes(
 			self._model_name,
 			self.table_name,
 			self.pk,
@@ -313,7 +318,7 @@ class Model(metaclass=MetaModel):
 		self._last_action["type"] = "DELETE"
 		self._last_action["timestamp"] = datetime.now()
 
-	def rollback_last_action(self):
+	async def rollback_last_action(self):
 		"""
 		Rollback (revert) last action
 		"""
@@ -322,21 +327,23 @@ class Model(metaclass=MetaModel):
 
 		if self._last_action["type"] == "DELETE":
 			logger.info("Rollback last action: delete")
-			self.audit_manager.revert_changes(
+			await self.audit_manager.revert_changes(
 				self._model_name,
 				self.table_name,
 				self.pk,
 				self.table_name,
 				self._last_action["timestamp"],
 			)
-			self.save()
+			await self.save()
 			self._last_action = {}
 		else:
 			logger.error(f'Unknown last action type: {self._last_action["type"]}')
 			return
 
 	@classmethod
-	def _class_get_formatted_sql_fields(cls, skip_primary_key: bool = False) -> dict:
+	async def _class_get_formatted_sql_fields(
+		cls, skip_primary_key: bool = False
+	) -> dict:
 		"""
 		Gets the formatted sql fields.
 
@@ -354,7 +361,7 @@ class Model(metaclass=MetaModel):
 			if field.primary_key and skip_primary_key:
 				continue
 
-			model_fields[field_name] = field.to_sql_type()
+			model_fields[field_name] = await field.to_sql_type()
 
 			if field.primary_key:
 				model_fields[field_name] = f"{field.to_sql_type()} PRIMARY KEY"
@@ -363,12 +370,14 @@ class Model(metaclass=MetaModel):
 					try:
 						model_fields[field_name] += " NOT NULL"
 					except KeyError:
-						model_fields[field_name] = f"{field.to_sql_type()} NOT NULL"
+						model_fields[field_name] = (
+							f"{await field.to_sql_type()} NOT NULL"
+						)
 				if field.unique:
 					try:
 						model_fields[field_name] += " UNIQUE"
 					except KeyError:
-						model_fields[field_name] = f"{field.to_sql_type()} UNIQUE"
+						model_fields[field_name] = f"{await field.to_sql_type()} UNIQUE"
 				if field.default is not None:
 					try:
 						model_fields[field_name] += f" DEFAULT {field.default}"
@@ -395,20 +404,22 @@ class Model(metaclass=MetaModel):
 			if field.primary_key and skip_primary_key:
 				continue
 
-			model_fields[field_name] = field.to_sql_type()
+			model_fields[field_name] = await field.to_sql_type()
 			if field.primary_key:
-				model_fields[field_name] = f"{field.to_sql_type()} PRIMARY KEY"
+				model_fields[field_name] = f"{await field.to_sql_type()} PRIMARY KEY"
 			else:
 				if not field.null:
 					try:
 						model_fields[field_name] += " NOT NULL"
 					except KeyError:
-						model_fields[field_name] = f"{field.to_sql_type()} NOT NULL"
+						model_fields[field_name] = (
+							f"{await field.to_sql_type()} NOT NULL"
+						)
 				if field.unique:
 					try:
 						model_fields[field_name] += " UNIQUE"
 					except KeyError:
-						model_fields[field_name] = f"{field.to_sql_type()} UNIQUE"
+						model_fields[field_name] = f"{await field.to_sql_type()} UNIQUE"
 				if field.default is not None:
 					try:
 						model_fields[field_name] += f" DEFAULT {field.default}"
