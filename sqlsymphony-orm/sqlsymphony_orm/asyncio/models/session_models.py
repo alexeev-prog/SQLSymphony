@@ -30,7 +30,7 @@ class MetaSessionModel(type):
 
 	__tablename__ = None
 
-	async def __new__(
+	def __new__(
 		cls, class_object: "SessionModel", parents: tuple, attributes: dict
 	):
 		"""
@@ -82,7 +82,7 @@ class SessionModel(metaclass=MetaSessionModel):
 	__tablename__ = None
 	_ids = 0
 
-	async def __init__(self, **kwargs):
+	def __init__(self, **kwargs):
 		"""
 		Constructs a new instance.
 
@@ -165,7 +165,7 @@ class SessionModel(metaclass=MetaSessionModel):
 		self.hooks[before_action.lower()] = {"function": func, "args": func_args}
 
 	@property
-	async def pk(self) -> Any:
+	def pk(self) -> Any:
 		"""
 		Get primary key value
 
