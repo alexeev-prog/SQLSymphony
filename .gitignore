@@ -167,3 +167,5 @@ sqlsymphony-orm/*.lock
 sqlsymphony-orm/format-code.py
 sqlsymphony-orm/main.py
 sqlsymphony-orm/spacetabs.sh
+.idea/
+sqlsymphony-orm/.idea
