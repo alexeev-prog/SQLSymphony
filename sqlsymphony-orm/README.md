@@ -43,15 +43,15 @@ SQLSymphony is a **lightweight** ✨, **powerful** 💪, and **high-performance*
 
 ## 🌟 Comparison with Alternatives
 
-| Feature                          | SqlSymphony  | SQLAlchemy | Peewee  |
-| -------------------------------- | ------------ | ---------- | ------- |
-| 💫 Simplicity                    | ✔️          | ✔️         | ✔️      |
-| 🚀 Performance                   | ✔️          | ❌         | ✔️      |
-| 🌐 Database Agnosticism          | ❌          | ✔️         | ❌      |
-| 📚 Comprehensive Documentation   | ✔️          | ✔️         | ✔️      |
-| 🔥 Active Development            | ✔️          | ✔️         | ❌      |
-| 💻 Audit changes & reverts       | ✔️          | ❌         | ❌      |
-| ⚡ ASYNC Support                 | COMING SOON | ✔️         | ❌      |
+| Feature                        | SqlSymphony | SQLAlchemy | Peewee |
+|--------------------------------|-------------|------------|--------|
+| 💫 Simplicity                  | ✔️          | ✔️         | ✔️     |
+| 🚀 Performance                 | ✔️          | ❌          | ✔️     |
+| 🌐 Database Agnosticism        | ❌           | ✔️         | ❌      |
+| 📚 Comprehensive Documentation | ✔️          | ✔️         | ✔️     |
+| 🔥 Active Development          | ✔️          | ✔️         | ❌      |
+| 💻 Audit changes & reverts     | ✔️          | ❌          | ❌      |
+| ⚡ ASYNC Support                | COMING SOON | ✔️         | ❌      |
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

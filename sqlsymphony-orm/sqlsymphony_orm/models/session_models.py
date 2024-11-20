@@ -7,7 +7,7 @@ from collections import OrderedDict
 from loguru import logger
 
 from sqlsymphony_orm.database.manager import SQLiteMultiManager
-from sqlsymphony_orm.constants import RESTRICTIED_FIELDS
+from sqlsymphony_orm.constants import RESTRICTED_FIELDS
 from sqlsymphony_orm.datatypes.fields import BaseDataType, IntegerField
 from sqlsymphony_orm.exceptions import (
 	PrimaryKeyError,
@@ -95,9 +95,9 @@ class SessionModel(metaclass=MetaSessionModel):
 		for field_name, field in self._original_fields.items():
 			value = kwargs.get(field_name, None)
 
-			if field_name in RESTRICTIED_FIELDS:
+			if field_name in RESTRICTED_FIELDS:
 				raise FieldNamingError(
-					f"The field named {field_name} is prohibited to avoid naming errors. Please try a different name. List of restricted names: {RESTRICTIED_FIELDS}"
+					f"The field named {field_name} is prohibited to avoid naming errors. Please try a different name. List of restricted names: {RESTRICTED_FIELDS}"
 				)
 
 			if not kwargs.get("manager", False):

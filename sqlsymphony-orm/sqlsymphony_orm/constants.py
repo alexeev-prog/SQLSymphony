@@ -1,4 +1,4 @@
-RESTRICTIED_FIELDS: list = [
+RESTRICTED_FIELDS: list = [
 	"__new__",
 	"__init__",
 	"__str__",

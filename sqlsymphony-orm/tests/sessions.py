@@ -52,7 +52,7 @@ def test_sessions():
 
 def test_all_models():
 	all_models = session.get_all()
-	all_users = session.get_all_by_module(User)
+	all_users = session.get_all_by_model(User)
 
 	assert len(all_models) == 4
 	assert len(all_users) == 3
