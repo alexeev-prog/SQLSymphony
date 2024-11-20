@@ -97,7 +97,7 @@ Once installed, you can start using the library in your Python projects. Check o
 ## 💻 Usage Examples
 
 ## Security.Hashing
-A security module created for hash functions.
+A security  created for hash functions.
 
 <details>
 
