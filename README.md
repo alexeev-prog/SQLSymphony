@@ -47,11 +47,11 @@ SQLSymphony is a **lightweight** ✨, **powerful** 💪, and **high-performance*
 | -------------------------------- | ------------ | ---------- | ------- |
 | 💫 Simplicity                    | ✔️          | ✔️         | ✔️      |
 | 🚀 Performance                   | ✔️          | ❌         | ✔️      |
-| 🌐 Database Agnosticism          | ❌          | ✔️         | ❌      |
+| 🌐 Database Agnosticism          | ❌         | ✔️         | ❌      |
 | 📚 Comprehensive Documentation   | ✔️          | ✔️         | ✔️      |
 | 🔥 Active Development            | ✔️          | ✔️         | ❌      |
 | 💻 Audit changes & reverts       | ✔️          | ❌         | ❌      |
-| ⚡ ASYNC Support                 | ✔️          | ✔️ (v2)    | ❌      |
+| ⚡ ASYNC Support                 | COMING SOON     | ✔️ (v2)    | ❌      |
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -97,7 +97,7 @@ Once installed, you can start using the library in your Python projects. Check o
 ## 💻 Usage Examples
 
 ## Security.Hashing
-A security  created for hash functions.
+A security module created for hash functions.
 
 <details>
 

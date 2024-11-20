@@ -1,3 +1,33 @@
+commit 699f6bcefe710e4d9300e547388f834fd29085db
+Author: alexeev-prog <alexeev.dev@mail.ru>
+Date:   Wed Nov 20 20:40:51 2024 +0700
+
+    fix: fix bugs, errors
+
+commit a60e03e09ccd242ea5cdb58a4f600669aeeef0be
+Author: alexeev-prog <alexeev.dev@mail.ru>
+Date:   Wed Nov 20 19:24:43 2024 +0700
+
+    fix: fix bugs, errors
+
+commit 88a752a2afdc8033c1768e1242cce18a9a5f7f91
+Author: alexeev-prog <alexeev.dev@mail.ru>
+Date:   Fri Oct 25 18:03:35 2024 +0700
+
+    unstable: fix magic async methods
+
+commit 5fcf982fcaea8c6b279b162a2f21bd562e3cf93b
+Author: alexeev-prog <alexeev.dev@mail.ru>
+Date:   Fri Oct 25 13:30:15 2024 +0700
+
+    unstable: feat: adding async support
+
+commit 148282118b4388b0a03ed6e1af3087464049ff3b
+Author: alexeev-prog <alexeev.dev@mail.ru>
+Date:   Thu Oct 24 22:23:09 2024 +0700
+
+    DEV: feat: start adding async support
+
 commit cf0459b3f8a01f404b757707b74daaa92e0f841b
 Author: alexeev-prog <alexeev.dev@mail.ru>
 Date:   Sun Oct 20 00:58:11 2024 +0700
