@@ -118,7 +118,7 @@ class SQLiteDBConnector(DBConnector):
 		Commit changes to database
 		"""
 		logger.info("Commit changes to database")
-		await await self._connection.commit()
+		await self._connection.commit()
 
 	async def fetch(self, query: str, values: Tuple = (), get_cursor: bool = False) -> list:
 		"""
