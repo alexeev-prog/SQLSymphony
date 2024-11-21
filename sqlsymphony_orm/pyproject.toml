@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sqlsymphony_orm"
-version = "0.4.15"
+version = "0.4.16"
 description = "The elegant and powerful SQLite3 ORM for Python"
 authors = ["alexeev-prog <dev.alexeev@mail.ru>"]
 readme = "README.md"
