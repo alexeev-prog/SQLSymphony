@@ -9,18 +9,18 @@ session = SQLiteSession("example.db")
 
 
 class User(SessionModel):
-	__tablename__ = "Users"
+    __tablename__ = "Users"
 
-	id = IntegerField(primary_key=True)
-	name = TextField(null=False)
-	cash = RealField(null=False, default=0.0)
+    id = IntegerField(primary_key=True)
+    name = TextField(null=False)
+    cash = RealField(null=False, default=0.0)
 
-	def __repr__(self):
-		return f"<User {self.pk}>"
+    def __repr__(self):
+        return f"<User {self.pk}>"
 
 
 print(
-	session.filter(QueryBuilder().SELECT("*").FROM(User.table_name).WHERE(name="Anna"))
+    session.filter(QueryBuilder().SELECT("*").FROM(User.table_name).WHERE(name="Anna"))
 )
 print(session.get_all_by_model(User))
 

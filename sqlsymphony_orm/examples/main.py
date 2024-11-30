@@ -7,15 +7,15 @@ start = time()
 
 
 class BankAccount(Model):
-	__tablename__ = "BankAccounts"
-	__database__ = "bank.db"
+    __tablename__ = "BankAccounts"
+    __database__ = "bank.db"
 
-	id = IntegerField(primary_key=True)
-	name = TextField(null=False)
-	cash = RealField(null=False, default=0.0)
+    id = IntegerField(primary_key=True)
+    name = TextField(null=False)
+    cash = RealField(null=False, default=0.0)
 
-	def __repr__(self):
-		return f"<BankAccount {self.pk}>"
+    def __repr__(self):
+        return f"<BankAccount {self.pk}>"
 
 
 account = BankAccount(name="John", cash=100.0)
@@ -40,10 +40,10 @@ BankAccount.objects.drop_table()
 mm_manager = SQLiteMultiModelManager("database.db")
 mm_manager.add_model(account)
 mm_manager.model_manager(account._model_name).create_table(
-	account.table_name, account.get_formatted_sql_fields()
+    account.table_name, account.get_formatted_sql_fields()
 )
 mm_manager.model_manager(account._model_name).insert(
-	account.table_name, account.get_formatted_sql_fields(), account.pk, account
+    account.table_name, account.get_formatted_sql_fields(), account.pk, account
 )
 mm_manager.model_manager(account._model_name).commit()
 

@@ -10,32 +10,32 @@ session = SQLiteSession("example.db")
 
 
 class User(SessionModel):
-	__tablename__ = "Users"
+    __tablename__ = "Users"
 
-	id = IntegerField(primary_key=True)
-	name = TextField(null=False)
-	cash = RealField(null=False, default=0.0)
+    id = IntegerField(primary_key=True)
+    name = TextField(null=False)
+    cash = RealField(null=False, default=0.0)
 
-	def __repr__(self):
-		return f"<User {self.pk}>"
+    def __repr__(self):
+        return f"<User {self.pk}>"
 
 
 class User2(SessionModel):
-	__tablename__ = "Users"
+    __tablename__ = "Users"
 
-	id = IntegerField(primary_key=True)
-	name = TextField(null=False)
-	cash = RealField(null=False, default=0.0)
-	password = TextField(default="password1234")
+    id = IntegerField(primary_key=True)
+    name = TextField(null=False)
+    cash = RealField(null=False, default=0.0)
+    password = TextField(default="password1234")
 
-	def __repr__(self):
-		return f"<User {self.pk}>"
+    def __repr__(self):
+        return f"<User {self.pk}>"
 
 
 class Comment(SessionModel):
-	id = IntegerField(primary_key=True)
-	name = TextField(null=False)
-	user_id = IntegerField(null=False)
+    id = IntegerField(primary_key=True)
+    name = TextField(null=False)
+    user_id = IntegerField(null=False)
 
 
 user = User(name="John")
@@ -57,7 +57,7 @@ session.add(comment)
 session.commit()
 
 print(
-	session.filter(QueryBuilder().SELECT("*").FROM(User.table_name).WHERE(name="Anna"))
+    session.filter(QueryBuilder().SELECT("*").FROM(User.table_name).WHERE(name="Anna"))
 )
 print(session.get_all())
 print(session.get_all_by_model(User))

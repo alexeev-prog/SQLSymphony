@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sqlsymphony_orm"
-version = "0.4.16"
+version = "0.4.17"
 description = "The elegant and powerful SQLite3 ORM for Python"
 authors = ["alexeev-prog <dev.alexeev@mail.ru>"]
 readme = "README.md"
@@ -21,7 +21,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [project]
-keywords = ["sqlsymphony", "async", "async database", "async ORM", "aiosqlite", "OOP", "database", "sql", "sqlite", "ORM", "db", 'sqlite3', 'sqlalchemy', 'fast', 'simple']
+keywords = ["sqlsymphony", "database", "ORM", "sqlite", "OOP", "database", "sql", "sqlite", "db", 'sqlite3', 'sqlalchemy', 'fast', 'simple']
 license = {text = "GNU GPL v3"}
 requires-python = ">=3.9"
 dynamic = ["version"]
