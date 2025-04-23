@@ -1,3 +1,52 @@
+commit 19ebc33e48fafae6dde4622aeff0d7541d913835
+Author: alexeev-prog <alexeev.dev@mail.ru>
+Date:   Sun Dec 1 00:59:22 2024 +0700
+
+    style/refactor: some refactoring and improvements in typing annotations
+
+commit 17ab2725ca3d781e20c22c2ad6b59eb8f4ee0ad0
+Author: alexeev-prog <alexeev.dev@mail.ru>
+Date:   Thu Nov 21 22:13:21 2024 +0700
+
+    clean
+
+commit b5cde8b08dd53e1cd8a22b01d9ac2e3a4872b1ec
+Author: alexeev-prog <alexeev.dev@mail.ru>
+Date:   Thu Nov 21 22:12:22 2024 +0700
+
+    fix bugs
+
+commit 95c474eb9aac77653608abee9aa6f6168b758edb
+Author: alexeev-prog <alexeev.dev@mail.ru>
+Date:   Thu Nov 21 22:10:10 2024 +0700
+
+    fix bugs
+
+commit b0052bdc688b74ecdeef250e1f668c63b7a1b0bc
+Merge: 02a49af e1d22aa
+Author: Alexeev Bronislav <tehnodropstore@gmail.com>
+Date:   Thu Nov 21 22:08:47 2024 +0700
+
+    fix: typos (#1)
+
+commit e1d22aade400c18f064937aec81c11f5e58f106b
+Author: ralsei <fr2500@pm.me>
+Date:   Wed Nov 20 19:07:19 2024 +0300
+
+    fix: Updated gitignore
+
+commit 02a49af0a3ed8d8f5c1a7cc02d87be8409c2a118
+Author: alexeev-prog <alexeev.dev@mail.ru>
+Date:   Wed Nov 20 22:21:12 2024 +0700
+
+    docs: fix docs
+
+commit d039069be1c782b647f900cef6394581578eae64
+Author: ralsei <fr2500@pm.me>
+Date:   Wed Nov 20 18:11:19 2024 +0300
+
+    fix: typos
+
 commit 699f6bcefe710e4d9300e547388f834fd29085db
 Author: alexeev-prog <alexeev.dev@mail.ru>
 Date:   Wed Nov 20 20:40:51 2024 +0700

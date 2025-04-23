@@ -37,6 +37,10 @@
 
  > SQLSymphony: The elegant and powerful SQLite3 ORM for Python
 
+> [!CAUTION]
+> At the moment, SQLSymphony is archived and not supported. I create new ORM library later.
+
+
 SQLSymphony is a **lightweight** ✨, **powerful** 💪, and **high-performance**⚡️, Object-Relational Mapping (ORM) library for Python, designed to simplify the interaction with SQLite3 databases. It provides a Pythonic, object-oriented interface that allows developers to focus on their application's bussiness logic rather than the underlying database management.
 
 <p align='center'>SQLSymphony ORM - powerful and simple ORM for python</p>
